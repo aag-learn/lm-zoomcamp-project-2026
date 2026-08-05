@@ -1,0 +1,68 @@
+{
+  "generated_at": "2026-08-18T19:22:22Z",
+  "ansible_core_version": "2.21.3",
+  "retrieval": {
+    "keyword": {
+      "hit_rate": 0.0022222222222222222,
+      "mrr": 0.0011111111111111111
+    },
+    "vector": {
+      "hit_rate": 0.6311111111111111,
+      "mrr": 0.459021164021164
+    },
+    "hybrid": {
+      "hit_rate": 0.6133333333333333,
+      "mrr": 0.4532169312169312
+    },
+    "hybrid_rerank": {
+      "hit_rate": 0.7155555555555555,
+      "mrr": 0.5333439153439153
+    }
+  },
+  "llm": {
+    "rag_accuracy": 0.7777777777777778,
+    "no_rag_accuracy": 0.5688888888888889,
+    "question_count": 450
+  },
+  "compositional": {
+    "pass_rate": 0.8333333333333334,
+    "results": [
+      {
+        "module_fqcn": "ansible.builtin.copy",
+        "yaml_valid": true,
+        "unknown_names": [],
+        "missing_required": []
+      },
+      {
+        "module_fqcn": "ansible.builtin.service",
+        "yaml_valid": true,
+        "unknown_names": [],
+        "missing_required": []
+      },
+      {
+        "module_fqcn": "ansible.builtin.apt",
+        "yaml_valid": true,
+        "unknown_names": [],
+        "missing_required": []
+      },
+      {
+        "module_fqcn": "ansible.builtin.apt_key",
+        "yaml_valid": false,
+        "unknown_names": [],
+        "missing_required": []
+      },
+      {
+        "module_fqcn": "ansible.builtin.user",
+        "yaml_valid": true,
+        "unknown_names": [],
+        "missing_required": []
+      },
+      {
+        "module_fqcn": "ansible.builtin.iptables",
+        "yaml_valid": true,
+        "unknown_names": [],
+        "missing_required": []
+      }
+    ]
+  }
+}

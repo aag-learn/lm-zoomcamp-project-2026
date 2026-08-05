@@ -1,0 +1,64 @@
+<% content_for :title, "Evaluation" %>
+
+<h1 class="text-2xl font-semibold text-gray-900">Evaluation</h1>
+
+<% if @results.blank? %>
+  <p class="mt-6 text-gray-600">
+    No evaluation results are available yet. Generate them with:
+  </p>
+  <pre class="mt-2 rounded-md bg-gray-100 p-4 text-sm"><code>bin/rails eval:all</code></pre>
+<% else %>
+  <p class="mt-2 text-sm text-gray-600">
+    Results pinned to <strong>ansible-core <%= @results["ansible_core_version"] %></strong>
+    as of <%= @results["generated_at"] %>. Regenerate via
+    <code class="rounded bg-gray-100 px-1">bin/rails eval:ground_truth &amp;&amp; bin/rails eval:all</code>
+    — see PLAN.md for methodology.
+  </p>
+
+  <section class="mt-8">
+    <h2 class="text-lg font-semibold text-gray-900">Retrieval</h2>
+    <table class="mt-2 w-full text-sm">
+      <thead>
+        <tr class="text-left text-gray-500">
+          <th class="py-1">Strategy</th>
+          <th class="py-1">Hit rate</th>
+          <th class="py-1">MRR</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% @results["retrieval"].each do |strategy, scores| %>
+          <tr class="border-t border-gray-100">
+            <td class="py-1"><%= strategy %></td>
+            <td class="py-1"><%= number_to_percentage(scores["hit_rate"] * 100, precision: 1) %></td>
+            <td class="py-1"><%= scores["mrr"].round(3) %></td>
+          </tr>
+        <% end %>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="mt-8">
+    <h2 class="text-lg font-semibold text-gray-900">LLM (RAG vs. no-RAG)</h2>
+    <p class="mt-2 text-sm text-gray-700">
+      RAG accuracy: <strong><%= number_to_percentage(@results["llm"]["rag_accuracy"] * 100, precision: 1) %></strong>
+      · No-RAG accuracy: <strong><%= number_to_percentage(@results["llm"]["no_rag_accuracy"] * 100, precision: 1) %></strong>
+      · <%= @results["llm"]["question_count"] %> questions
+    </p>
+  </section>
+
+  <section class="mt-8">
+    <h2 class="text-lg font-semibold text-gray-900">Compositional</h2>
+    <p class="mt-2 text-sm text-gray-700">
+      Pass rate: <strong><%= number_to_percentage(@results["compositional"]["pass_rate"] * 100, precision: 1) %></strong>
+    </p>
+    <ul class="mt-2 space-y-1 text-sm">
+      <% @results["compositional"]["results"].each do |result| %>
+        <% passed = result["yaml_valid"] && result["unknown_names"].blank? && result["missing_required"].blank? %>
+        <li>
+          <%= result["module_fqcn"] %> —
+          <span class="<%= passed ? "text-green-700" : "text-red-700" %>"><%= passed ? "PASS" : "FAIL" %></span>
+        </li>
+      <% end %>
+    </ul>
+  </section>
+<% end %>

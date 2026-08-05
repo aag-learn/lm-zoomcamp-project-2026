@@ -45,6 +45,10 @@ gem "pgvector"
 # LLM chat, tool-calling, and Rails chat scaffolding [https://rubyllm.com/]
 gem "ruby_llm"
 
+# No longer a default gem as of Ruby 3.4 — used to read/write the pinned
+# ground-truth/eval-results data files
+gem "csv"
+
 # Tailwind CSS via a standalone CLI binary, no Node.js toolchain needed
 gem "tailwindcss-rails"
 

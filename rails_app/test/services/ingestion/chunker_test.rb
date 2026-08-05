@@ -101,5 +101,29 @@ module Ingestion
 
       assert_equal 0, example_chunks.size
     end
+
+    test "overview chunk states deprecation status and alternative module for a deprecated module" do
+      raw_doc = raw_doc_fixture("apt_key")
+      # apt_key's real notes/seealso already happen to mention "deprecated" and
+      # deb822_repository in prose — blank them so this assertion can only pass
+      # via the structured `deprecated` field itself being surfaced.
+      raw_doc["doc"]["notes"] = []
+      raw_doc["doc"]["seealso"] = []
+
+      chunks = Chunker.call("ansible.builtin.apt_key", raw_doc)
+      overview_chunk = chunks.find { |c| c[:chunk_type] == "overview" }
+
+      assert_includes overview_chunk[:content], "deprecated"
+      assert_includes overview_chunk[:content], "ansible.builtin.deb822_repository"
+    end
+
+    test "overview chunk contains no deprecation text for a module that isn't deprecated" do
+      raw_doc = raw_doc_fixture("copy")
+      chunks = Chunker.call("ansible.builtin.copy", raw_doc)
+
+      overview_chunk = chunks.find { |c| c[:chunk_type] == "overview" }
+
+      refute_includes overview_chunk[:content].downcase, "deprecat"
+    end
   end
 end

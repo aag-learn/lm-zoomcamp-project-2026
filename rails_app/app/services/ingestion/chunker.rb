@@ -23,6 +23,7 @@ module Ingestion
 
     def overview_chunk(prefix: "")
       lines = [ doc["short_description"], Array(doc["description"]).join(" ") ]
+      lines << deprecation_line if doc["deprecated"].present?
       lines << "Notes: #{Array(doc['notes']).join(' ')}" if doc["notes"].present?
       lines << "See also: #{Array(doc['seealso']).filter_map { |s| s['module'] || s['name'] }.join(', ')}" if doc["seealso"].present?
 
@@ -31,6 +32,16 @@ module Ingestion
         stable_id: "#{fqcn}::overview",
         content: lines.compact.join("\n\n")
       }
+    end
+
+    def deprecation_line
+      deprecated = doc["deprecated"]
+      alternative = deprecated["alternative"]
+
+      line = "Deprecated: this module is deprecated"
+      line += " in favor of #{alternative}" if alternative.present?
+      line += ". #{deprecated['why']}" if deprecated["why"].present?
+      line
     end
 
     def parameter_chunks

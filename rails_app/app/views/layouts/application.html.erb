@@ -28,6 +28,7 @@
       <div class="container mx-auto flex items-center gap-6 px-5 py-4">
         <%= link_to "Chats", chats_path, class: class_names("font-semibold", "text-blue-600" => nav_link_active?(chats_path), "text-gray-700 hover:text-blue-600" => !nav_link_active?(chats_path)) %>
         <%= link_to "Models", models_path, class: class_names("font-semibold", "text-blue-600" => nav_link_active?(models_path), "text-gray-700 hover:text-blue-600" => !nav_link_active?(models_path)) %>
+        <%= link_to "Evaluation", evaluation_path, class: class_names("font-semibold", "text-blue-600" => nav_link_active?(evaluation_path), "text-gray-700 hover:text-blue-600" => !nav_link_active?(evaluation_path)) %>
         <%= link_to "New chat", new_chat_path, class: "ml-auto rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700" %>
       </div>
     </nav>
