@@ -3,7 +3,8 @@
 "claude" = "latest"
 "npm:@fission-ai/openspec" = "latest"
 "uv" = "latest"
-"python" = "latest" 
+"python" = "latest"
+"ruby" = "latest"
 
 [bootstrap.packages]
 "apt:curl" = "latest"

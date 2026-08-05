@@ -25,5 +25,57 @@ services:
       timeout: 5s
       retries: 5
 
+  prepare_db:
+    build:
+      context: ./rails_app
+      target: web
+    command: ["bin/rails", "db:prepare"]
+    restart: "no"
+    environment:
+      RAILS_ENV: production
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?RAILS_MASTER_KEY must be set in .env}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  web:
+    build:
+      context: ./rails_app
+      target: web
+    environment:
+      RAILS_ENV: production
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?RAILS_MASTER_KEY must be set in .env}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+    depends_on:
+      prepare_db:
+        condition: service_completed_successfully
+      embedder:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "ruby -rnet/http -e \"exit(Net::HTTP.get_response(URI('http://localhost:3000/up')).code.to_i == 200 ? 0 : 1)\""]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  worker:
+    build:
+      context: ./rails_app
+      target: worker
+    environment:
+      RAILS_ENV: production
+      RAILS_MASTER_KEY: ${RAILS_MASTER_KEY:?RAILS_MASTER_KEY must be set in .env}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD must be set in .env}
+    depends_on:
+      prepare_db:
+        condition: service_completed_successfully
+      embedder:
+        condition: service_healthy
+
 volumes:
   postgres_data:

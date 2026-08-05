@@ -27,3 +27,17 @@ Once `mise.local.toml` is in place, provision every tool and package this projec
 ```sh
 mise bootstrap
 ```
+
+This provisions `ruby` (and everything else declared in `mise.toml`) automatically — no separate Ruby install step needed.
+
+### Running the app
+
+Copy `.env.example` to `.env` and fill in real values — in particular, `RAILS_MASTER_KEY` must match `rails_app/config/master.key` (generated once by `rails new`, gitignored, never committed).
+
+Bring up the full stack:
+
+```sh
+docker compose up -d --build
+```
+
+The `web` and `worker` services share one Rails codebase (`rails_app/`), built from the same `Dockerfile` via two different build targets — `worker` additionally has `ansible-core` installed, `web` does not. A `prepare_db` service prepares the application's databases automatically before `web`/`worker` start — nothing further to run by hand.
