@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.1].define(version: 2026_08_10_073634) do
+ActiveRecord::Schema[8.1].define(version: 2026_08_11_142628) do
   # These are extensions that must be enabled in order to support this database
   enable_extension "pg_catalog.plpgsql"
   enable_extension "vector"
@@ -129,6 +129,21 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_10_073634) do
     t.index ["provider"], name: "index_models_on_provider"
   end
 
+  create_table "retrieval_logs", force: :cascade do |t|
+    t.string "ansible_core_version"
+    t.decimal "cost"
+    t.datetime "created_at", null: false
+    t.integer "input_tokens"
+    t.bigint "message_id", null: false
+    t.integer "output_tokens"
+    t.decimal "response_time"
+    t.string "retrieval_strategy", null: false
+    t.jsonb "retrieved_chunks", default: [], null: false
+    t.string "top_module"
+    t.datetime "updated_at", null: false
+    t.index ["message_id"], name: "index_retrieval_logs_on_message_id", unique: true
+  end
+
   create_table "tool_calls", force: :cascade do |t|
     t.jsonb "arguments", default: {}
     t.datetime "created_at", null: false
@@ -150,5 +165,6 @@ ActiveRecord::Schema[8.1].define(version: 2026_08_10_073634) do
   add_foreign_key "messages", "chats"
   add_foreign_key "messages", "models"
   add_foreign_key "messages", "tool_calls"
+  add_foreign_key "retrieval_logs", "messages"
   add_foreign_key "tool_calls", "messages"
 end

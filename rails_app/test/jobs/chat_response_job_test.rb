@@ -24,6 +24,51 @@ class ChatResponseJobTest < ActiveSupport::TestCase
     "#{deltas.join("\n\n")}\n\ndata: #{done}\n\ndata: [DONE]\n\n"
   end
 
+  def openai_tool_call_sse_body(tool_name:, arguments:, call_id: "call_1", prompt_tokens: 50, completion_tokens: 20)
+    start = { choices: [ { index: 0,
+                            delta: { role: "assistant",
+                                     tool_calls: [ { index: 0, id: call_id, type: "function",
+                                                     function: { name: tool_name, arguments: "" } } ] },
+                            finish_reason: nil } ] }.to_json
+    fragment = { choices: [ { index: 0,
+                               delta: { tool_calls: [ { index: 0, function: { arguments: arguments } } ] },
+                               finish_reason: nil } ] }.to_json
+    done = { choices: [ { index: 0, delta: {}, finish_reason: "tool_calls" } ],
+             usage: { prompt_tokens: prompt_tokens, completion_tokens: completion_tokens,
+                      total_tokens: prompt_tokens + completion_tokens } }.to_json
+
+    "data: #{start}\n\ndata: #{fragment}\n\ndata: #{done}\n\ndata: [DONE]\n\n"
+  end
+
+  def stub_search_ansible_docs_tool_call(query:)
+    stub_request(:post, "https://api.openai.com/v1/chat/completions")
+      .to_return(
+        status: 200,
+        body: openai_tool_call_sse_body(tool_name: "search_ansible_docs", arguments: { query: query }.to_json),
+        headers: { "Content-Type" => "text/event-stream" }
+      )
+      .to_return(status: 200, body: openai_sse_body("here's what I found"),
+                 headers: { "Content-Type" => "text/event-stream" })
+  end
+
+  def stub_embed_and_rerank(query:)
+    stub_request(:post, "http://embedder:8000/embed")
+      .with(body: { texts: [ query ] }.to_json)
+      .to_return(
+        status: 200,
+        body: { embeddings: [ captured_embedding_for("query:#{query}") ] }.to_json,
+        headers: { "Content-Type" => "application/json" }
+      )
+
+    top_content = captured_embeddings.fetch("ansible.builtin.copy::param::src").fetch("text")
+
+    stub_request(:post, "http://embedder:8000/rerank").to_return do |request|
+      body = JSON.parse(request.body)
+      scores = body["candidates"].map { |c| c == top_content ? 0.9 : 0.1 }
+      { status: 200, body: { scores: scores }.to_json, headers: { "Content-Type" => "application/json" } }
+    end
+  end
+
   test "a second message within an existing chat stays in that chat, not a new one" do
     chat = Chat.create!
 
@@ -68,5 +113,60 @@ class ChatResponseJobTest < ActiveSupport::TestCase
     ChatResponseJob.perform_now(chat.id, "hi")
 
     assert_equal "Hello, world!", Message.last.content
+  end
+
+  test "a reply that calls search_ansible_docs gets a RetrievalLog" do
+    query = "copy files to a remote host"
+
+    copy_module = create_module("ansible.builtin.copy")
+    uri_module = create_module("ansible.builtin.uri")
+    create_chunk(
+      ansible_module: copy_module,
+      stable_id: "ansible.builtin.copy::param::src",
+      content: captured_embeddings.fetch("ansible.builtin.copy::param::src").fetch("text"),
+      embedding: captured_embedding_for("ansible.builtin.copy::param::src")
+    )
+    create_chunk(
+      ansible_module: uri_module,
+      stable_id: "ansible.builtin.uri::param::dest",
+      content: captured_embeddings.fetch("ansible.builtin.uri::param::dest").fetch("text"),
+      embedding: captured_embedding_for("ansible.builtin.uri::param::dest")
+    )
+
+    stub_search_ansible_docs_tool_call(query: query)
+    stub_embed_and_rerank(query: query)
+
+    chat = Chat.create!
+    assert_difference("RetrievalLog.count", 1) do
+      ChatResponseJob.perform_now(chat.id, query)
+    end
+
+    log = RetrievalLog.last
+    assert_equal Message.last.id, log.message_id
+    assert_equal "hybrid_rerank", log.retrieval_strategy
+    assert_equal "2.21.2", log.ansible_core_version
+    assert_equal "ansible.builtin.copy", log.top_module
+
+    stable_ids = log.retrieved_chunks.map { |c| c["stable_id"] }
+    assert_includes stable_ids, "ansible.builtin.copy::param::src"
+    assert_includes stable_ids, "ansible.builtin.uri::param::dest"
+    log.retrieved_chunks.each do |chunk|
+      assert chunk["rrf_score"].is_a?(Numeric)
+      assert chunk["rerank_score"].is_a?(Numeric)
+    end
+
+    assert_not_nil log.input_tokens
+    assert_not_nil log.output_tokens
+    assert_not_nil log.response_time
+  end
+
+  test "a reply that doesn't call any tool gets no RetrievalLog row" do
+    chat = Chat.create!
+
+    stub_openai_chat(reply: "hello there")
+
+    assert_no_difference("RetrievalLog.count") do
+      ChatResponseJob.perform_now(chat.id, "hi")
+    end
   end
 end

@@ -1,0 +1,10 @@
+<% groups = citation_groups(message.retrieval_log) %>
+<% if groups.present? %>
+  <div id="message_<%= message.id %>_citations" class="mt-2 text-sm text-gray-500">
+    Sources:
+    <% groups.each do |fqcn, labels| %>
+      <code class="rounded bg-gray-100 px-1 py-0.5 text-xs text-gray-700"><%= fqcn %></code>
+      (<%= labels.join(", ") %>)<%= "," unless fqcn == groups.keys.last %>
+    <% end %>
+  </div>
+<% end %>

@@ -4,6 +4,8 @@ require "rails/test_help"
 require "minitest/mock"
 require "webmock/minitest"
 
+Dir[Rails.root.join("test/support/**/*.rb")].each { |f| require f }
+
 module ActiveSupport
   class TestCase
     # Run tests in parallel with specified workers
@@ -11,6 +13,8 @@ module ActiveSupport
 
     # Setup all fixtures in test/fixtures/*.yml for all tests in alphabetical order.
     fixtures :all
+
+    include RetrievalTestHelpers
 
     # Add more helper methods to be used by all tests here...
   end
