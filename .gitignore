@@ -1,2 +1,4 @@
 .env
 mise.local.toml
+__pycache__/
+*.pyc
