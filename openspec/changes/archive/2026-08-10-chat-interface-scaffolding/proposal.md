@@ -1,0 +1,36 @@
+## Why
+
+The ingestion pipeline populates `Chunk`/`AnsibleModule` with real data, but there's still no way for a person to talk to the app — no chat UI, no LLM integration, no persistence for conversations. This change delivers that plumbing first, deliberately without wiring in retrieval, so the RubyLLM/Turbo Streams/persistence stack can be proven out in isolation before the (separate, follow-up) retrieval integration adds its own complexity on top.
+
+## What Changes
+
+- Add the `ruby_llm` gem (confirmed via `gem list -r ruby_llm` — no separate Rails-integration gem needed, generators/railtie ship in the base gem) and an `OPENAI_API_KEY`-backed initializer.
+- Run `bin/rails generate ruby_llm:install` to create `Chat`/`Message`/`ToolCall`/`Model` tables and models (kept as RubyLLM's own default names, not renamed).
+- Run `bin/rails generate ruby_llm:chat_ui` to scaffold the chat controllers/views/routes, Turbo Streams-driven.
+- Add a `Feedback` model (`belongs_to :message`, `rating` +1/-1) and thumbs up/down UI wiring.
+- Support real multi-turn conversations (a `Chat` can hold more than one exchange) — no special handling needed, this falls out of using `Chat`/`Message` as designed.
+- Add `OPENAI_API_KEY` to `.env.example`/`.env` and as a required var on **`web`'s, `worker`'s, and `prepare_db`'s** `docker-compose.yml` blocks — corrected mid-implementation, twice (see below), not the original plan.
+
+Explicitly **not** in this change (deferred to a follow-up retrieval change): `Retrieval::KeywordSearch`/`VectorSearch`/`HybridSearch`, `RerankerClient`, `SearchAnsibleDocs`/`GetModuleDetails` tools, `RetrievalLog`, citation rendering. The assistant in this change answers only from its own trained knowledge — expected for this slice, not a defect.
+
+**Corrected during implementation (1 of 2)**: the original plan assumed only `web` needed `OPENAI_API_KEY`, reasoning "`worker` doesn't serve chat." That reasoning was wrong — `web` runs with `RAILS_ENV=production`, which sets `config.active_job.queue_adapter = :solid_queue`, so `web` only *enqueues* the chat-ui generator's `ChatResponseJob`; only `worker`'s `bin/jobs` process actually executes Solid Queue jobs in this architecture. `worker` still doesn't serve any HTTP chat traffic, but it does need the API key to run the job that talks to the LLM provider. Decided to give `worker` the key (keeping `worker` as the single Solid Queue processor for the whole app, consistent with `rails-app-scaffold`'s design) rather than enable `web`'s dormant `SOLID_QUEUE_IN_PUMA` option, which would have reintroduced a second job-processing pathway.
+
+**Corrected during implementation (2 of 2)**: discovered while running `prepare_db` against the rebuilt image — it also failed to boot with the same `KeyError`. `prepare_db` reuses the `web` build target and runs `RAILS_ENV=production`, so it loads every initializer (including `config/initializers/ruby_llm.rb`) just to run `db:prepare`, even though it never touches RubyLLM itself. Any `RAILS_ENV=production` process booted from this codebase needs the key just to start — not only the two that actually use it. Added to `prepare_db`'s block too.
+
+**Corrected during implementation (3 of 4 — found via a real browser, not curl)**: every chat form submission in an actual browser failed with a 422 `ActionController::InvalidAuthenticityToken`. `config/environments/production.rb`'s generated `config.assume_ssl = true`/`config.force_ssl = true` (Rails 8's default, meant for Kamal's standard TLS-terminating-proxy deployment) made Rails treat every request as already-HTTPS without checking — so `request.base_url` reported `https://localhost:3000` even though this project's `docker-compose` deployment serves plain HTTP with no TLS termination anywhere. The browser's real `Origin: http://localhost:3000` header then failed CSRF's origin-match check against that wrongly-assumed HTTPS base URL. This is a pre-existing latent bug from `rails-app-scaffold`, invisible until this change added the first real interactive browser form — and invisible to this change's own curl-based verification (7.1–7.4) too, since `curl` doesn't send an `Origin` header on POST by default. Fixed by disabling both settings (commented out, with a note to re-enable them if this app is ever deployed behind a real TLS-terminating proxy); re-verified with a curl request that explicitly sets `Origin`, confirming no 422 and no `Secure` flag on the session cookie (which would have silently broken real browser sessions over HTTP too, on top of the CSRF failure).
+
+**Corrected during implementation (4 of 4 — also found via a real browser)**: the chat UI rendered completely unstyled, with 404s in the browser console for fingerprinted assets (e.g. `application-8b441ae0.css`). `rails_app/Dockerfile` — hand-written for this project rather than `rails new`'s generated one — never ran `bin/rails assets:precompile`, so `public/assets/` (correctly gitignored, meant to be generated at build time) never existed in the image. Another pre-existing gap from `rails-app-scaffold`, invisible until now because the `/up` health check never renders a real layout. Fixed by adding an `assets:precompile` step to the `web` build target, using `SECRET_KEY_BASE_DUMMY=1`/a dummy `OPENAI_API_KEY` since precompiling boots the full Rails environment (loading every initializer) without ever needing real secrets. Re-verified: the exact fingerprinted filenames referenced in `/chats`' rendered HTML now exist in the built image and serve with 200. Separately: this project never actually installed Tailwind (no `tailwindcss-rails`/`cssbundling-rails` gem, despite `PLAN.md`'s original repo-setup notes mentioning `--css=tailwind`) — the plain-but-now-loading styling is expected, a scope decision to revisit separately if wanted, not a second bug.
+
+## Capabilities
+
+### New Capabilities
+- `chat-interface`: a persisted, multi-turn, LLM-backed chat UI (via RubyLLM) on the `web` image, with per-message thumbs up/down feedback. No retrieval grounding in this change.
+
+### Modified Capabilities
+(none — `rails-app`'s existing requirements about the `web`/`worker` images, shared codebase, and health endpoint are unaffected)
+
+## Impact
+
+- **New**: `rails_app/db/migrate/*` (RubyLLM's install generator + `feedbacks` table), `app/models/chat.rb`/`message.rb`/`tool_call.rb`/`model.rb` (generated), `app/models/feedback.rb`, chat controllers/views (generated), `config/initializers/ruby_llm.rb`.
+- **Modified**: `rails_app/Gemfile`/`Gemfile.lock` (new gem), `docker-compose.yml` (`web`'s, `worker`'s, and `prepare_db`'s environment blocks, new required `OPENAI_API_KEY`), `.env.example`, `rails_app/config/environments/production.rb` (disabled `assume_ssl`/`force_ssl`), `rails_app/Dockerfile` (added `assets:precompile` to the `web` target) — the latter two are pre-existing latent gaps from `rails-app-scaffold`, both first surfaced by this change's browser-based form/UI (see "Corrected during implementation" below).
+- **No changes to**: `worker`'s image/Dockerfile (same shared codebase as `web`, no new install step — just a new required env var, same pattern as `RAILS_MASTER_KEY`/`POSTGRES_PASSWORD`), `embedder/`, ingestion pipeline, `AnsibleModule`/`Chunk`.

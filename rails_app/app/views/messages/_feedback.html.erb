@@ -1,0 +1,7 @@
+<% feedback = message.feedback %>
+<%= button_to "👍", message_feedback_path(message), params: { feedback: { rating: 1 } }, method: :post,
+    form: { style: "display: inline;" },
+    style: feedback&.rating == 1 ? "font-weight: bold;" : "" %>
+<%= button_to "👎", message_feedback_path(message), params: { feedback: { rating: -1 } }, method: :post,
+    form: { style: "display: inline;" },
+    style: feedback&.rating == -1 ? "font-weight: bold;" : "" %>

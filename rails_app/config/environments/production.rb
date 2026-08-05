@@ -24,11 +24,18 @@ Rails.application.configure do
   # Store uploaded files on the local file system (see config/storage.yml for options).
   config.active_storage.service = :local
 
-  # Assume all access to the app is happening through a SSL-terminating reverse proxy.
-  config.assume_ssl = true
-
-  # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.
-  config.force_ssl = true
+  # These two are Rails' generated defaults for Kamal's standard TLS-terminating
+  # proxy setup, which this project doesn't use — docker-compose serves plain
+  # HTTP end to end, no reverse proxy anywhere. With assume_ssl on, Rails treats
+  # every request as already-HTTPS without checking, so request.base_url reports
+  # "https://" even over a real plain-HTTP connection; the browser's Origin
+  # header correctly says "http://", CSRF's origin check sees a mismatch, and
+  # every form POST fails with 422 InvalidAuthenticityToken. Confirmed directly
+  # via a real browser during chat-interface-scaffolding's live verification.
+  # Revisit if this app is ever deployed behind a real TLS-terminating proxy
+  # (e.g. a cloud host like Fly.io/Render) — turn both back on then.
+  # config.assume_ssl = true
+  # config.force_ssl = true
 
   # Skip http-to-https redirect for the default health check endpoint.
   # config.ssl_options = { redirect: { exclude: ->(request) { request.path == "/up" } } }

@@ -1,0 +1,3 @@
+<%= turbo_stream.replace "message_#{@message.id}_feedback" do %>
+  <%= render "messages/feedback", message: @message %>
+<% end %>

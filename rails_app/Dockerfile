@@ -12,6 +12,13 @@ RUN bundle install
 COPY . .
 
 FROM base AS web
+ENV RAILS_ENV=production
+# Precompiling boots the full Rails environment, so every initializer that
+# reads a required ENV var (RAILS_MASTER_KEY via SECRET_KEY_BASE_DUMMY,
+# OPENAI_API_KEY via config/initializers/ruby_llm.rb) needs a build-time
+# stand-in — none of these values need to be real, since precompiling never
+# calls the LLM provider or decrypts credentials, it just needs the app to boot.
+RUN SECRET_KEY_BASE_DUMMY=1 OPENAI_API_KEY=dummy bin/rails assets:precompile
 CMD ["bin/rails", "server", "-b", "0.0.0.0"]
 
 FROM base AS worker

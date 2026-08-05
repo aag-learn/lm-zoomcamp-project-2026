@@ -1,4 +1,15 @@
 Rails.application.routes.draw do
+  resources :chats do
+    resources :messages, only: [ :create ]
+  end
+  resources :messages, only: [] do
+    resource :feedback, only: [ :create ]
+  end
+  resources :models, only: [ :index, :show ] do
+    collection do
+      post :refresh
+    end
+  end
   # Define your application routes per the DSL in https://guides.rubyonrails.org/routing.html
 
   # Reveal health status on /up that returns 200 if the app boots with no exceptions, otherwise 500.
@@ -10,5 +21,5 @@ Rails.application.routes.draw do
   # get "service-worker" => "rails/pwa#service_worker", as: :pwa_service_worker
 
   # Defines the root path route ("/")
-  # root "posts#index"
+  root "chats#index"
 end
