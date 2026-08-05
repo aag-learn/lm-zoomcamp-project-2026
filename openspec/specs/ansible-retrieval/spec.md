@@ -48,8 +48,8 @@ The system SHALL record, for every assistant reply, which chunks were retrieved 
 - **THEN** a log entry is still created for that reply, with the low-relevance retrieved chunks recorded honestly, rather than being omitted
 
 ### Requirement: Retrieved sources are cited in the interface
-The system SHALL display, for each retrieval-grounded assistant reply, which source documentation it was based on.
+The system SHALL make retrieval source information available for each retrieval-grounded assistant reply, on demand rather than automatically displayed as an inline claim — see the `chat-interface` capability's "Retrieval details are available on demand, not auto-displayed" requirement for the exact mechanism.
 
 #### Scenario: Citations visible under a grounded reply
-- **WHEN** a visitor views an assistant reply that used retrieval
-- **THEN** the source module(s) the reply was grounded in are visibly displayed alongside that reply
+- **WHEN** a visitor activates the retrieval-details affordance on an assistant reply that used retrieval
+- **THEN** the source module(s) the reply was grounded in are shown, without being auto-displayed as an unqualified claim alongside the reply

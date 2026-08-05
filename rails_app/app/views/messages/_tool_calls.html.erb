@@ -1,4 +1,2 @@
-<% tool_calls ||= local_assigns[:message] %>
-<% tool_calls.tool_calls.each do |tool_call| %>
-  <%= render tool_call_partial(tool_call), tool_calls: tool_calls, tool_call: tool_call %>
-<% end %>
+<%# Intentionally blank: tool-call/tool-result messages are internal orchestration,
+    never shown in the visitor-facing transcript. See hide-tool-orchestration-messages. %>

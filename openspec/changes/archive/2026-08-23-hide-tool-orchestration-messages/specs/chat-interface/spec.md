@@ -1,7 +1,7 @@
 ## ADDED Requirements
 
 ### Requirement: Visitor-facing transcript excludes internal tool-orchestration messages
-The system SHALL display, in the chat transcript, only the visitor's own messages and the assistant's final reply content — and SHALL NOT display raw tool-call invocations or raw tool-result content as chat bubbles, even though those messages are persisted internally.
+The system SHALL display, in the chat transcript, only the visitor's own messages and the assistant's final reply content — and SHALL NOT display raw tool-call invocations, raw tool-result content, or system/instruction messages as chat bubbles, even though those messages are persisted internally.
 
 #### Scenario: A reply that uses a tool shows only the final answer
 - **WHEN** an assistant reply is generated using one or more tool calls
@@ -14,6 +14,10 @@ The system SHALL display, in the chat transcript, only the visitor's own message
 #### Scenario: Reloading the page still hides orchestration messages
 - **WHEN** a visitor reloads a conversation that included a tool-using reply
 - **THEN** the reloaded transcript still shows only the visitor's message and the assistant's final reply, not the tool-call or tool-result messages
+
+#### Scenario: A chat's system/instruction message is never shown
+- **WHEN** a chat has a persisted `role: "system"` message (e.g. from `chat.with_instructions`)
+- **THEN** the transcript never displays it as a chat bubble, on initial load or after any later message is added
 
 ### Requirement: Retrieval details are available on demand, not auto-displayed
 The system SHALL NOT automatically render retrieval source information as an assertion of relevance. Instead, when a `RetrievalLog` exists for an assistant message, the system SHALL provide an on-demand affordance that, when activated, displays that log's data (retrieved chunks with scores, top module, ansible_core_version, cost, response time) as-is, without filtering by relevance or confidence.

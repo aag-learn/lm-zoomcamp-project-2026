@@ -10,6 +10,7 @@ A second, related gap in the same spirit: `_citations.html.erb` auto-renders a "
 - Those intermediate messages remain persisted (needed for `ruby_llm`'s own conversation-replay/context-building and for future debugging/audit) — they are hidden from the rendered view, not deleted or skipped at creation.
 - Resolve the mid-stream open question (see design.md): the current empty-assistant-bubble-then-live-append pattern relies on Turbo appending a message's bubble at creation time; a first-round assistant message that will later turn into a tool call cannot be known to be "hide-worthy" at creation time. design.md works out the exact mechanism (filtering, and how the initially-appended placeholder is suppressed or safely no-ops for a message that turns out to be a tool call) rather than assuming the naive `where(role: ...)` filter is sufficient.
 - The "Sources: ..." line (`messages/_citations.html.erb`) becomes an opt-in "retrieval details" affordance instead of an always-rendered claim: a small button/icon on any assistant message that has a `RetrievalLog`, opening a popup with the log's raw data (retrieved chunks with their rerank scores, top module, `ansible_core_version`, cost, response time) — shown as-is, with no relevance filtering, since it's now an honest inspector rather than an implied-authoritative citation.
+- Discovered during implementation (the companion `guarantee-retrieval-grounding` change landed after this change's design was written): a chat's `role: "system"` message (from `chat.with_instructions`, now called on every turn) was rendering as a full visible "System" bubble showing the raw instructions text. Fixed the same way as the tool-call/tool-result messages — blanked, not filtered.
 
 ## Capabilities
 
@@ -25,6 +26,8 @@ A second, related gap in the same spirit: `_citations.html.erb` auto-renders a "
 ## Impact
 
 - `app/views/chats/show.html.erb` — the message-rendering loop gains a filter.
+- `app/views/messages/_system.html.erb` — blanked, same mechanism as `_tool_calls.html.erb`/`_tool.html.erb` (discovered during implementation, see design.md).
+- `app/views/messages/_error.html.erb` — deleted as dead code (its only caller, `tool_results/_default.html.erb`, is deleted in this change).
 - Possibly `app/models/message.rb` (a scope for "visitor-facing" messages) and/or `app/views/messages/_assistant.html.erb` / the Turbo broadcast setup, depending on how design.md resolves the mid-stream placeholder question.
 - `app/views/messages/_citations.html.erb`, `app/views/messages/_assistant.html.erb` — reworked from an auto-rendered line into an on-demand popup trigger.
 - A new Stimulus controller for the popup (no dialog/modal pattern exists in this app yet; native HTML `<dialog>` is the natural fit for a Rails 8 + Turbo + Tailwind stack with no new JS dependency).

@@ -1,7 +1,0 @@
-<div id="message_<%= message.id %>" class="message mb-5 rounded-r-md border-l-4 border-red-600 bg-red-50 p-3">
-  <div class="mb-1 font-semibold text-red-700"><%= title.presence || "Error" %></div>
-  <pre class="m-0 whitespace-pre-wrap text-red-800"><%= error_message %></pre>
-  <div class="mt-1 text-sm text-red-800">
-    <%= message.created_at&.strftime("%I:%M %p") %>
-  </div>
-</div>
