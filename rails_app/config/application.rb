@@ -4,7 +4,16 @@ require "rails/all"
 
 # Require the gems listed in Gemfile, including any gems
 # you've limited to :test, :development, or :production.
+# This app's .env lives at the repo root (one directory above this Rails
+# app's own root), not dotenv-rails' default Rails.root/.env — so the search
+# path has to be redirected before dotenv-rails' `before_configuration` hook
+# runs its default load. `defined?` guards this for every environment other
+# than development, where dotenv-rails isn't in the Gemfile at all (see
+# Gemfile's comment: kept out of :test deliberately, to keep tests hermetic;
+# out of :production/:worker images, where real secrets come from
+# docker-compose.yml's `environment:` blocks, not a .env file on disk).
 Bundler.require(*Rails.groups)
+Dotenv::Rails.files = ["../.env"] if defined?(Dotenv::Rails)
 
 module RailsApp
   class Application < Rails::Application

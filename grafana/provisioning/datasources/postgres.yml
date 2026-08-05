@@ -16,3 +16,26 @@ datasources:
       database: rails_app_production
       sslmode: disable
       postgresVersion: 1800
+
+  # Same Postgres container, same grafana_reader role (a cluster-wide role,
+  # already granted SELECT on rails_app_development's tables too by
+  # `bin/rails db:grafana_reader:ensure` — see rails_app/lib/tasks/grafana.rake
+  # — whenever it's run locally, e.g. via `mise run db:prepare`) — just a
+  # different database, so local bin/dev chat traffic shows up in the same
+  # dashboard via its datasource-picker variable. Not the default: opening
+  # the dashboard without picking a datasource still shows production data.
+  - name: Postgres (dev)
+    uid: postgres_grafana_reader_dev
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: rails_app_development
+    user: grafana_reader
+    isDefault: false
+    editable: false
+    secureJsonData:
+      password: $GRAFANA_DB_PASSWORD
+    jsonData:
+      database: rails_app_development
+      sslmode: disable
+      postgresVersion: 1800

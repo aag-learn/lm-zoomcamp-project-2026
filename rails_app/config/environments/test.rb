@@ -3,6 +3,13 @@
 # your test database is "scratch space" for the test suite and is wiped
 # and recreated between test runs. Don't rely on the data there!
 
+# config/initializers/ruby_llm.rb requires OPENAI_API_KEY to be set (raises
+# otherwise), but tests never make a real OpenAI call (RubyLLM/HTTP calls are
+# stubbed) — a dummy stand-in is enough, and keeps `bin/rails test` runnable
+# with zero local setup, without needing dotenv-rails to load the real .env
+# into test (deliberately not: see Gemfile).
+ENV["OPENAI_API_KEY"] ||= "dummy"
+
 Rails.application.configure do
   # Settings specified here will take precedence over those in config/application.rb.
 

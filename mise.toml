@@ -5,9 +5,28 @@
 "uv" = "latest"
 "python" = "latest"
 "ruby" = "latest"
+"ansible-core" = "latest"
 
 [bootstrap.packages]
 "apt:curl" = "latest"
 "apt:jq" = "latest"
+"apt:build-essential" = "latest"
+"apt:libpq-dev" = "latest"
 "brew:curl" = "latest"
 "brew:jq" = "latest"
+"brew:libpq" = "latest"
+
+[tasks."db:prepare"]
+description = "Prepare local Rails databases (schema + Grafana reader role) against a docker-composed Postgres"
+run = """
+cd rails_app
+bin/rails db:prepare
+bin/rails db:grafana_reader:ensure
+"""
+
+[tasks.ingest]
+description = "Run the ingestion job synchronously against a docker-composed Postgres. Requires a locally-running embedder (see README) since this embeds every chunk."
+run = """
+cd rails_app
+bin/rails runner 'IngestAnsibleModulesJob.perform_now'
+"""

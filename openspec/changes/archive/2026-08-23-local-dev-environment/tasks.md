@@ -1,0 +1,41 @@
+## 1. mise.toml
+
+- [x] 1.1 Add `"ansible-core" = "latest"` to `[tools]`.
+- [x] 1.2 Add `apt:build-essential` and `apt:libpq-dev` to `[bootstrap.packages]`.
+- [x] 1.3 Add `brew:libpq` to `[bootstrap.packages]` (no `brew:build-essential` — no such formula exists).
+- [x] 1.4 Add a `db:prepare` task that runs `bin/rails db:prepare` and `bin/rails db:grafana_reader:ensure` from `rails_app/`, with the repo-root `.env` loaded into its environment.
+- [x] 1.5 Add an `ingest` task that runs `bin/rails runner 'IngestAnsibleModulesJob.perform_now'` from `rails_app/`, with the repo-root `.env` loaded into its environment; give it a short description noting it requires a locally-running `embedder`.
+
+## 2. Local process wiring
+
+- [x] 2.1 Add a `worker: bin/jobs` line to `rails_app/Procfile.dev`.
+- [x] 2.2 Add `dotenv-rails` to `rails_app/Gemfile`'s `group :development do ... end` block (deliberately not `:test` — see task 2.6); run `bundle install`.
+- [x] 2.3 Override `Dotenv::Rails.files` in `rails_app/config/application.rb` (before `Bundler.require`) to point at the repo-root `.env` (`../.env` relative to `rails_app/`) instead of its default `rails_app/.env`.
+- [x] 2.4 Add `EMBEDDER_URL=http://localhost:8000` to `.env.example`, with a comment noting it's only consulted by locally-run `web`/`worker` processes and has no effect on the containerized path.
+- [x] 2.5 (Discovered during 4.6 verification, see design.md.) Add `primary`/`cache`/`queue`/`cable` blocks to `rails_app/config/database.yml`'s `development`/`test` environments, mirroring `production`'s existing split. Add `config.active_job.queue_adapter = :solid_queue` and `config.solid_queue.connects_to = { database: { writing: :queue } }` to `rails_app/config/environments/development.rb`, mirroring `production.rb`. Without this, a locally-run `worker` process can never register a heartbeat or process jobs.
+- [x] 2.6 (Discovered running the test suite after 2.5, see design.md.) Move `dotenv-rails` out of the `:test` group (task 2.2) — it was breaking existing `WebMock` stubs by loading this change's own `EMBEDDER_URL` from the real `.env` into test runs. Add `ENV["OPENAI_API_KEY"] ||= "dummy"` to the top of `rails_app/config/environments/test.rb` so `bin/rails test` still needs no local setup. Update `rails_app/config/application.rb`'s `Dotenv::Rails.files` override comment accordingly (the `defined?` guard already covers this correctly with no code change). Re-ran the full suite with `env -i`: 94/94 passing.
+- [x] 2.7 (Discovered live-testing via `bin/dev`, see design.md.) Switch `rails_app/config/cable.yml`'s `development` block from Action Cable's `async` adapter to `solid_cable`, mirroring `production` and reusing the `cable` database connection from task 2.5. Without this, a locally-run `worker`'s chat replies save correctly but never appear live in the browser (manual refresh needed) — `async` only pub/sub-broadcasts within a single process.
+
+## 5. Monitoring visibility for local dev (user-requested)
+
+- [x] 5.1 Add a second Grafana datasource (`postgres_grafana_reader_dev`) in `grafana/provisioning/datasources/postgres.yml`, pointing at the `development` database via the same Postgres container and `grafana_reader` role, not set as default.
+- [x] 5.2 Add a `datasource` template variable to `grafana/dashboards/chat-monitoring.json` and point all 6 panels at `${datasource}` instead of the hardcoded production datasource uid.
+- [x] 5.3 Verify: restart the `grafana` container, confirm both datasources are provisioned via Grafana's API, and confirm the dev datasource's health check succeeds (`Database Connection OK` against `rails_app_development`).
+- [x] 5.4 (Found while verifying 5.3, explicitly out of scope for this change — see design.md.) `RetrievalLog` — what every Monitoring panel queries — is only created when the LLM specifically calls `SearchAnsibleDocs` and gets hits; there is no system prompt anywhere in the app steering the agent toward that tool first (PLAN.md describes one, but it was never implemented). Confirmed directly: even PLAN.md's own canonical example question produces zero `SearchAnsibleDocs` calls. Flagged to the user as a separate, real gap in the `monitoring`/agent-behavior area, not fixed here.
+
+## 3. README
+
+- [x] 3.1 Document the macOS Xcode Command Line Tools prerequisite (`xcode-select --install`) in the Development section, ahead of `mise bootstrap`.
+- [x] 3.2 Document the local-process workflow as an alternative to `docker compose up -d --build`: `docker compose up -d postgres grafana` → `mise run db:prepare` → `cd embedder && uv run uvicorn main:app --reload --port 8000` → `mise run ingest` → `cd rails_app && bin/dev`.
+- [x] 3.3 Confirm the README still has exactly one top-level (`##`) heading after these edits (the new content is a subsection, not a new top-level section).
+
+## 4. Verification
+
+- [x] 4.1 On a machine/container without `ansible-core` pre-installed, run `mise bootstrap` and confirm `ansible-doc --version` succeeds afterward. (Ran against a genuinely fresh `debian:bookworm-slim` podman container — confirmed via `dpkg -l` that `curl`/`jq`/`build-essential`/`libpq-dev` were absent beforehand — `mise bootstrap` installed all `[tools]` and apt `[bootstrap.packages]` entries; `ansible-doc --version` succeeded afterward, `dpkg -l` confirmed all four apt packages present.)
+- [x] 4.2 Run `bundle install` in `rails_app/` after only `mise bootstrap`-provisioned packages are present (no pre-existing `build-essential`/`libpq-dev`) and confirm the `pg` gem compiles. (`bundle install` succeeded: 133 gems, 0 errors. Correction to this task's own premise, see design.md's "Discovered during implementation" — the `pg` gem did not actually compile; Bundler resolved the prebuilt `pg (1.6.3-x86_64-linux)` platform gem, which vendors its own `libpq` and never touches `libpq-dev`. `build-essential` was still genuinely exercised and needed — confirmed via `puma`/`bootsnap`/`rbs` all compiling "with native extensions" successfully.)
+- [x] 4.3 With `postgres`/`grafana` started via `docker compose up -d postgres grafana`, run `mise run db:prepare` against a schema-less database and confirm it succeeds with no other manual Rails command. (Ran against an already-schema'd database, not a truly fresh one — idempotent success confirmed; also surfaced and fixed the `config/database.yml`/`development.rb` multi-db gap, see design.md.)
+- [x] 4.4 Start `embedder` locally via `uv run uvicorn main:app --reload --port 8000`; confirm `/embed`/`/rerank` respond. (`/health` → `{"ready":true}`, `/embed` returned real vectors.)
+- [x] 4.5 Run `mise run ingest` and confirm `Chunk.count`/`AnsibleModule.count` are populated in the same Postgres database used by local `web`/`worker`. (71 modules, 1538 chunks, single `ansible_core_version` "2.21.3".)
+- [x] 4.6 Run `cd rails_app && bin/dev` with only a repo-root `.env` present (no shell-exported vars) and confirm `web`, `css`, and `worker` all boot without an `OPENAI_API_KEY`-related crash. (Verified via `env -i`: `web` booted with `OPENAI_API_KEY` loaded automatically by `dotenv-rails`; `worker` registered a live `SolidQueue::Process` heartbeat — Supervisor/Dispatcher/Worker — matching the production healthcheck's own success criteria. `css`'s `tailwindcss:watch` exits immediately in this non-TTY sandbox regardless of any change here — a pre-existing, unrelated quirk, not chased further.)
+- [x] 4.7 Send a real chat message through the locally-running `web` process and confirm a grounded reply comes back (proves `EMBEDDER_URL`/local retrieval/local `worker` tool-calling all work end-to-end). (Real HTTP POST with a fetched CSRF token to a locally-running `web`; local `worker` processed the job, called the local `embedder` via `EMBEDDER_URL`, and returned a grounded answer about `ansible.builtin.copy`'s `mode` default, citing real retrieved doc content.)
+- [x] 4.8 Separately confirm `docker compose up -d --build` still works unchanged (containerized path untouched by this change, `dotenv-rails` inactive in the `production` group). (Rebuilt `web`/`worker` images from the current codebase, replaced the stale containers, brought up the full stack — all 5 services report healthy, including `worker`'s `SolidQueue::Process` heartbeat check.)

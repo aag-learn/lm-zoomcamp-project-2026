@@ -7,13 +7,29 @@
   "timezone": "browser",
   "time": { "from": "now-7d", "to": "now" },
   "refresh": "30s",
+  "templating": {
+    "list": [
+      {
+        "name": "datasource",
+        "label": "Data source",
+        "type": "datasource",
+        "query": "postgres",
+        "current": { "text": "Postgres", "value": "postgres_grafana_reader" },
+        "hide": 0,
+        "refresh": 1,
+        "regex": "",
+        "includeAll": false,
+        "multi": false
+      }
+    ]
+  },
   "panels": [
     {
       "id": 1,
       "title": "Query volume/day",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
-      "datasource": { "type": "postgres", "uid": "postgres_grafana_reader" },
+      "datasource": { "type": "postgres", "uid": "${datasource}" },
       "targets": [
         {
           "refId": "A",
@@ -28,7 +44,7 @@
       "title": "Latency p50/p95/day",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
-      "datasource": { "type": "postgres", "uid": "postgres_grafana_reader" },
+      "datasource": { "type": "postgres", "uid": "${datasource}" },
       "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
       "targets": [
         {
@@ -44,7 +60,7 @@
       "title": "Cost/day + running total",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
-      "datasource": { "type": "postgres", "uid": "postgres_grafana_reader" },
+      "datasource": { "type": "postgres", "uid": "${datasource}" },
       "fieldConfig": { "defaults": { "unit": "currencyUSD" }, "overrides": [] },
       "targets": [
         {
@@ -60,7 +76,7 @@
       "title": "Feedback ratio/day",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
-      "datasource": { "type": "postgres", "uid": "postgres_grafana_reader" },
+      "datasource": { "type": "postgres", "uid": "${datasource}" },
       "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
       "targets": [
         {
@@ -76,7 +92,7 @@
       "title": "Top modules queried",
       "type": "barchart",
       "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
-      "datasource": { "type": "postgres", "uid": "postgres_grafana_reader" },
+      "datasource": { "type": "postgres", "uid": "${datasource}" },
       "targets": [
         {
           "refId": "A",
@@ -91,7 +107,7 @@
       "title": "Low-confidence-retrieval rate/day",
       "type": "timeseries",
       "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
-      "datasource": { "type": "postgres", "uid": "postgres_grafana_reader" },
+      "datasource": { "type": "postgres", "uid": "${datasource}" },
       "description": "Share of queries whose top-ranked chunk had a reranker score below 0.3 — threshold is a starting point, tune against this project's own eval score distribution (see docs/evaluation-results.md).",
       "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
       "targets": [

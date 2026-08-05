@@ -1,9 +1,18 @@
-# Async adapter only works within the same process, so for manually triggering cable updates from a console,
-# and seeing results in the browser, you must do so from the web console (running inside the dev process),
-# not a terminal started via bin/rails console! Add "console" to any action or any ERB template view
-# to make the web console appear.
+# Matches production's solid_cable adapter (not the Rails-default async
+# adapter) — async only pubsub-broadcasts within a single process, which
+# silently breaks Turbo Streams live updates now that web and worker run as
+# genuinely separate local processes (bin/dev): a message created by a
+# worker-processed job would never reach web's Action Cable server, so the
+# browser never sees the reply until a manual page refresh re-renders from
+# the database. Uses the same `cable` database connects_to added to
+# database.yml's development block for this same reason.
 development:
-  adapter: async
+  adapter: solid_cable
+  connects_to:
+    database:
+      writing: cable
+  polling_interval: 0.1.seconds
+  message_retention: 1.day
 
 test:
   adapter: test

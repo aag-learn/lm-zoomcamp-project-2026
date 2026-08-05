@@ -55,6 +55,14 @@ Rails.application.configure do
   # Highlight code that enqueued background job in logs.
   config.active_job.verbose_enqueue_logs = true
 
+  # Matches production's queue backend (config/environments/production.rb),
+  # rather than Rails' default in-process :async adapter, so a locally-run
+  # worker process (bin/jobs, via bin/dev's Procfile.dev) is the thing that
+  # actually executes jobs — the same division of labor as the containerized
+  # web/worker split, not silently different in development.
+  config.active_job.queue_adapter = :solid_queue
+  config.solid_queue.connects_to = { database: { writing: :queue } }
+
   # Highlight code that triggered redirect in logs.
   config.action_dispatch.verbose_redirect_logs = true
 

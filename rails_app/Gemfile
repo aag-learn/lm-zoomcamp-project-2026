@@ -52,6 +52,18 @@ gem "csv"
 # Tailwind CSS via a standalone CLI binary, no Node.js toolchain needed
 gem "tailwindcss-rails"
 
+group :development do
+  # Loads the repo-root .env for local (non-Docker) processes: bin/dev, rails
+  # console, rails runner. Deliberately NOT in the :test group — tests stub
+  # every external call (embedder, OpenAI) and must stay hermetic regardless
+  # of what's in a developer's real .env (confirmed the hard way: adding
+  # EMBEDDER_URL to .env broke WebMock stubs written against the code's own
+  # http://embedder:8000 default, once dotenv-rails loaded it into ENV during
+  # `bin/rails test`). See config/environments/test.rb for how tests get a
+  # required-but-unused OPENAI_API_KEY without needing .env at all.
+  gem "dotenv-rails"
+end
+
 group :development, :test do
   # See https://guides.rubyonrails.org/debugging_rails_applications.html#debugging-with-the-debug-gem
   gem "debug", platforms: %i[ mri windows ], require: "debug/prelude"

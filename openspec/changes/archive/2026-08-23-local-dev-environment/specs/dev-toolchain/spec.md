@@ -1,8 +1,4 @@
-## Purpose
-
-Declare and document the project's local development tool/package dependencies via `mise`, so a contributor can go from a fresh clone to a fully-provisioned toolchain with one documented command, on either Linux or macOS.
-
-## Requirements
+## MODIFIED Requirements
 
 ### Requirement: Project-managed tools declared in mise
 The system SHALL declare `uv`, `python`, and `ansible-core` in `mise.toml`'s `[tools]` table, so `mise install`/`mise bootstrap` provisions all three without any manual installation step.
@@ -26,17 +22,6 @@ The system SHALL declare `curl`, `jq`, and `libpq-dev` in `mise.toml`'s `[bootst
 - **WHEN** a contributor on a Mac, with `system_packages.managers` restricted to `["brew"]`, runs `mise bootstrap` from the repo root
 - **THEN** `curl`, `jq`, and `libpq` are installed via `brew` and available on `PATH`, the `apt:` entries (including `build-essential`) are reported as skipped, and the README's Development section documents that Xcode Command Line Tools must be installed manually (`xcode-select --install`) for the `pg` gem's native extension to compile
 
-### Requirement: Per-machine package manager restriction via a gitignored local override
-The system SHALL document, and rely on, a gitignored `mise.local.toml` file in which each contributor sets `system_packages.managers` to restrict `mise bootstrap` to only their machine's package manager, preventing an unwanted attempt to install a different platform's package manager (e.g. bootstrapping Homebrew on Linux to satisfy `brew:` entries).
-
-#### Scenario: mise.local.toml is not committed
-- **WHEN** `git status` is run after a contributor creates their own `mise.local.toml`
-- **THEN** `mise.local.toml` does not appear as a trackable/untracked file, because it is listed in `.gitignore`
-
-#### Scenario: Without the restriction, the other platform's manager is not silently skipped
-- **WHEN** both `apt:` and `brew:` entries exist in `[bootstrap.packages]` and no `system_packages.managers` restriction is set
-- **THEN** `mise bootstrap` on Linux attempts to install Homebrew itself to satisfy the `brew:` entries, rather than skipping them — documented as the reason the restriction is required, not optional
-
 ### Requirement: README documents the Development setup command
 The system SHALL provide a `README.md` at the repo root containing a **Development** section that assumes `mise` is already installed, links to the official mise installation documentation, documents creating a per-machine `mise.local.toml`, states the command needed to provision every project-declared tool and package, documents the macOS Xcode Command Line Tools prerequisite, and documents how to run `web`, `worker`, and `embedder` as local processes alongside a docker-composed Postgres and Grafana.
 
@@ -51,6 +36,8 @@ The system SHALL provide a `README.md` at the repo root containing a **Developme
 #### Scenario: README has no other sections yet
 - **WHEN** `README.md` is inspected
 - **THEN** it contains exactly one top-level (`##`) section, Development, and no other top-level sections — the local-process workflow is documented as a subsection within it, alongside the existing Docker-based workflow
+
+## ADDED Requirements
 
 ### Requirement: mise tasks provision the local database and local knowledge base
 The system SHALL provide a `db:prepare` mise task that prepares the application's databases (schema and the Grafana read-only role) against a running, docker-composed Postgres, and an `ingest` mise task that runs the ingestion job synchronously against a running, docker-composed Postgres and a locally-running `embedder`. Both tasks SHALL run with the repo-root `.env` loaded into their environment.
