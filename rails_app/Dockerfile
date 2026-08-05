@@ -20,7 +20,7 @@ ENV RAILS_ENV=production
 # calls the LLM provider or decrypts credentials, it just needs the app to boot.
 RUN SECRET_KEY_BASE_DUMMY=1 OPENAI_API_KEY=dummy bin/rails assets:precompile
 ENTRYPOINT ["bin/docker-entrypoint"]
-CMD ["bin/rails", "server", "-b", "0.0.0.0"]
+CMD ["./bin/thrust", "bin/rails", "server"]
 
 FROM base AS worker
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/

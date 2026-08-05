@@ -1,0 +1,41 @@
+# Build-only Kamal config for the embedder image — never `kamal deploy` with
+# this file, only `kamal build push -c config/deploy.embedder.yml`. embedder
+# runs as an accessory in the main config/deploy.yml, referenced by the tag
+# this push produces. See design.md, Decision 1.
+#
+# Discovered during implementation: Kamal requires every config to define
+# servers: or accessories: (Kamal::Configuration#ensure_required_keys_present
+# raises "No servers or accessories specified" otherwise) — confirmed the
+# hard way, `kamal build push` genuinely fails without one, not just
+# `kamal config`. The accessories: block below is a stub that exists ONLY to
+# satisfy this check; it mirrors config/deploy.yml's real `embedder`
+# accessory and must be kept in sync with it, but it is never itself
+# booted/rebooted — always run `kamal accessory boot/reboot embedder`
+# against the main config/deploy.yml, not this file.
+
+service: llm-zoomcamp-project-embedder
+image: aag-learn/llm-zoomcamp-project-embedder
+
+ssh:
+  user: root
+  keys:
+    - ~/.ssh/ansible_git
+
+registry:
+  server: ghcr.io
+  username:
+    - GHCR_USERNAME
+  password:
+    - GHCR_TOKEN
+
+builder:
+  context: embedder
+  dockerfile: embedder/Dockerfile
+  arch: amd64
+  remote: ssh://root@194.62.98.172
+
+accessories:
+  embedder:
+    service: embedder
+    image: ghcr.io/aag-learn/llm-zoomcamp-project-embedder
+    host: 194.62.98.172 # kept in sync with config/deploy.yml's servers.web host

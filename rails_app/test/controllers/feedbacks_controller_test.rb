@@ -2,6 +2,7 @@ require "test_helper"
 
 class FeedbacksControllerTest < ActionDispatch::IntegrationTest
   setup do
+    sign_in_as(users(:one))
     chat = Chat.create!
     @message = chat.messages.create!(role: "assistant", content: "hello")
   end

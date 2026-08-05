@@ -1,6 +1,8 @@
 require "test_helper"
 
 class MonitoringsControllerTest < ActionDispatch::IntegrationTest
+  setup { sign_in_as(users(:one)) }
+
   test "shows placeholders when there is no data yet" do
     get monitoring_path
 

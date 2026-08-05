@@ -1,0 +1,130 @@
+# Kamal config for the public-facing web role. worker/embedder are built and
+# pushed via the separate config/deploy.worker.yml / config/deploy.embedder.yml
+# (build-only, no servers:/proxy: — never `kamal deploy`), then referenced
+# below as accessories by the tags those pushes produce. See the
+# production-deployment change's design.md for the full rationale.
+
+service: llm-zoomcamp-project
+
+image: aag-learn/llm-zoomcamp-project
+
+ssh:
+  user: root
+  keys:
+    - ~/.ssh/ansible_git
+
+servers:
+  web:
+    - 194.62.98.172
+
+proxy:
+  ssl: true
+  host: llm-zoomcamp-project.alfonsoalba.com
+  # app_port: 80 is the default — matches Thruster's own default HTTP_PORT,
+  # no override needed (see design.md, Decision 2).
+  # healthcheck.path defaults to /up — matches Rails' built-in health route,
+  # no override needed (see design.md, Decision 3).
+
+registry:
+  # GHCR, public packages — not Kamal's "local registry" trick (see design.md,
+  # Decision 1 correction). Images are public: no secrets are baked into them,
+  # only app source/dependencies, which is an accepted trade-off for the free
+  # unlimited storage/bandwidth GHCR gives public packages.
+  server: ghcr.io
+  username:
+    - GHCR_USERNAME
+  password:
+    - GHCR_TOKEN
+
+builder:
+  context: rails_app
+  dockerfile: rails_app/Dockerfile
+  target: web
+  arch: amd64
+  # This sandbox has no local Docker daemon (only podman) — build on the VM's
+  # own daemon over SSH instead of locally. See design.md, Decision 1 correction.
+  remote: ssh://root@194.62.98.172
+
+env:
+  clear:
+    RAILS_ENV: production
+    GRAFANA_PORT: "3001"
+    POSTGRES_USER: llm_zoomcamp # not a secret — matches docker-compose.yml's own treatment (no :?must-be-set guard)
+  secret:
+    - RAILS_MASTER_KEY
+    - POSTGRES_PASSWORD
+    - OPENAI_API_KEY
+    - GRAFANA_DB_PASSWORD
+    - ADMIN_EMAIL
+    - ADMIN_PASSWORD
+
+# Declared in this exact order deliberately: accessories boot sequentially,
+# in declaration order, and postgres must get a head start on worker (see
+# design.md, Decision 4 — self-healing via restart policy covers the rest).
+accessories:
+  postgres:
+    service: postgres # override: keeps the hostname `database.yml`/Grafana already hardcode
+    image: pgvector/pgvector:pg18
+    host: 194.62.98.172
+    env:
+      clear:
+        POSTGRES_USER: llm_zoomcamp
+        POSTGRES_DB: llm_zoomcamp_production
+      secret:
+        - POSTGRES_PASSWORD
+    directories:
+      - postgres_data:/var/lib/postgresql
+
+  worker:
+    image: ghcr.io/aag-learn/llm-zoomcamp-project-worker
+    host: 194.62.98.172
+    env:
+      clear:
+        RAILS_ENV: production
+        POSTGRES_USER: llm_zoomcamp
+      secret:
+        - RAILS_MASTER_KEY
+        - POSTGRES_PASSWORD
+        - OPENAI_API_KEY
+        - GRAFANA_DB_PASSWORD
+        - ADMIN_EMAIL
+        - ADMIN_PASSWORD
+
+  embedder:
+    service: embedder # override: keeps the hostname EmbeddingClient/RerankerClient already default to
+    image: ghcr.io/aag-learn/llm-zoomcamp-project-embedder
+    host: 194.62.98.172
+
+  grafana:
+    image: grafana/grafana:latest
+    host: 194.62.98.172
+    proxy:
+      ssl: true
+      # Sibling subdomain, not a nested one (grafana.llm-zoomcamp-project...) —
+      # Cloudflare's free Universal SSL wildcard only covers one subdomain
+      # level under alfonsoalba.com. Also: this domain (and the main app's)
+      # must stay DNS-only in Cloudflare, not proxied — Cloudflare's SSL/TLS
+      # mode is zone-wide, and Flexible mode conflicts with kamal-proxy's own
+      # forced HTTP->HTTPS redirect, causing an infinite loop; Full (strict)
+      # wasn't an option since the zone also serves an unrelated production
+      # site. See design.md's Decision 1 correction for the full story.
+      host: llm-zoomcamp-project-grafana.alfonsoalba.com
+      app_port: 3000
+    env:
+      secret:
+        # "container_var:secrets_key" aliasing (Kamal::Configuration::Env#extract_alias) —
+        # the container expects GF_SECURITY_ADMIN_PASSWORD, our secrets file uses
+        # GRAFANA_ADMIN_PASSWORD (matching root .env's existing name for the same value).
+        - GF_SECURITY_ADMIN_PASSWORD:GRAFANA_ADMIN_PASSWORD
+        - GRAFANA_DB_PASSWORD
+    directories:
+      - grafana_data:/var/lib/grafana
+    # Individual files, not the two directories — Kamal::Cli::Accessory#upload
+    # calls SSHKit's upload! without recursive: true, so directory sources
+    # fail with Net::SCP::Error: can't upload directories unless :recursive
+    # (confirmed against 2.12.0, the latest release; not fixed by a version
+    # bump). See design.md, Decision 1 correction.
+    files:
+      - grafana/provisioning/dashboards/dashboards.yml:/etc/grafana/provisioning/dashboards/dashboards.yml:ro
+      - grafana/provisioning/datasources/postgres.yml:/etc/grafana/provisioning/datasources/postgres.yml:ro
+      - grafana/dashboards/chat-monitoring.json:/var/lib/grafana/dashboards/chat-monitoring.json:ro

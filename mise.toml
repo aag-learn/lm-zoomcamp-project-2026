@@ -6,6 +6,8 @@
 "python" = "latest"
 "ruby" = "latest"
 "ansible-core" = "latest"
+"docker-cli" = "latest"
+"github:docker/buildx" = "latest"
 
 [bootstrap.packages]
 "apt:curl" = "latest"

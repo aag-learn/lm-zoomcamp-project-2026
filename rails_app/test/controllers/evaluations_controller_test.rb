@@ -1,6 +1,8 @@
 require "test_helper"
 
 class EvaluationsControllerTest < ActionDispatch::IntegrationTest
+  setup { sign_in_as(users(:one)) }
+
   test "shows a no-results-yet state when nothing has been generated" do
     Eval::GroundTruth.stub(:load, []) do
       Eval::EvalResults.stub(:load, nil) do

@@ -1,6 +1,8 @@
 require "test_helper"
 
 class ChatsControllerTest < ActionDispatch::IntegrationTest
+  setup { sign_in_as(users(:one)) }
+
   test "reloading a chat's page returns all previously persisted messages" do
     chat = Chat.create!
     chat.messages.create!(role: "user", content: "what does the copy module do")
