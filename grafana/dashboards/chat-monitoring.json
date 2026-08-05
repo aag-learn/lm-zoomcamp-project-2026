@@ -101,23 +101,6 @@
           "rawQuery": true
         }
       ]
-    },
-    {
-      "id": 6,
-      "title": "Low-confidence-retrieval rate/day",
-      "type": "timeseries",
-      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
-      "datasource": { "type": "postgres", "uid": "${datasource}" },
-      "description": "Share of queries whose top-ranked chunk had a reranker score below 0.3 — threshold is a starting point, tune against this project's own eval score distribution (see docs/evaluation-results.md).",
-      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
-      "targets": [
-        {
-          "refId": "A",
-          "format": "time_series",
-          "rawSql": "SELECT\n  $__timeGroup(created_at, $__interval) AS time,\n  SUM(CASE WHEN (retrieved_chunks->0->>'rerank_score')::float < 0.3 THEN 1 ELSE 0 END)::float / NULLIF(COUNT(*), 0) AS low_confidence_rate\nFROM retrieval_logs\nWHERE $__timeFilter(created_at) AND jsonb_array_length(retrieved_chunks) > 0\nGROUP BY 1\nORDER BY 1",
-          "rawQuery": true
-        }
-      ]
     }
   ]
 }

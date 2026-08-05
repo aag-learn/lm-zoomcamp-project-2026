@@ -59,7 +59,7 @@ The system SHALL evaluate retrieval quality (hit rate and mean reciprocal rank o
 - **THEN** a hit-rate and mean-reciprocal-rank score is produced for each of the four retrieval strategies, computed against the full ingested corpus
 
 ### Requirement: LLM evaluation compares RAG-grounded and non-grounded answers
-The system SHALL, for each ground-truth question, generate an answer using retrieval-grounded generation and an answer using generation without retrieval, judge each for relevance and for parameter-accuracy (correct, incorrect, or not stated, matched against the question's expected values), and report an aggregate accuracy comparison between the two conditions.
+The system SHALL, for each ground-truth question, generate an answer using retrieval-grounded generation (with the search tool forced on the first round, so retrieval is actually exercised rather than left to the model's discretion) and an answer using generation without retrieval, judge each for relevance and for parameter-accuracy (correct, incorrect, or not stated, matched against the question's expected values), and report an aggregate accuracy comparison between the two conditions.
 
 #### Scenario: A grounded and non-grounded answer are both judged
 - **WHEN** LLM evaluation runs a ground-truth question
@@ -68,6 +68,10 @@ The system SHALL, for each ground-truth question, generate an answer using retri
 #### Scenario: A deprecation question distinguishes grounded from non-grounded accuracy
 - **WHEN** LLM evaluation runs a ground-truth deprecation question whose expected answer is "deprecated"
 - **THEN** the grounded and non-grounded judgments are recorded separately, so a difference in correctness between the two conditions is visible in the results
+
+#### Scenario: The RAG condition always exercises real retrieval
+- **WHEN** LLM evaluation generates the retrieval-grounded answer for a question
+- **THEN** the search tool is invoked on the first round regardless of whether the model would have chosen to call it on its own, so the RAG-vs-non-RAG comparison measures actual retrieval quality rather than the model's own decision of whether to search
 
 ### Requirement: Compositional task evaluation checks generated playbook tasks against real documentation
 The system SHALL evaluate, for a fixed set of task-generation prompts drawn from the same named modules used for ground truth, whether the generated YAML is syntactically valid, whether every module and parameter name it uses actually exists in the ingested documentation, and whether every required parameter for a used module is present.

@@ -81,7 +81,7 @@ class ChatResponseJobTest < ActiveSupport::TestCase
     end
 
     assert_equal chat.id, Message.last.chat_id
-    assert_equal 4, chat.messages.count # 2 user + 2 assistant
+    assert_equal 5, chat.messages.count # 1 system (grounding instructions) + 2 user + 2 assistant
   end
 
   test "a follow-up message's request includes prior messages as context" do
@@ -160,13 +160,70 @@ class ChatResponseJobTest < ActiveSupport::TestCase
     assert_not_nil log.response_time
   end
 
-  test "a reply that doesn't call any tool gets no RetrievalLog row" do
+  test "the first completion request forces the search_ansible_docs tool" do
     chat = Chat.create!
+    captured_bodies = []
 
-    stub_openai_chat(reply: "hello there")
-
-    assert_no_difference("RetrievalLog.count") do
-      ChatResponseJob.perform_now(chat.id, "hi")
+    stub_request(:post, "https://api.openai.com/v1/chat/completions").to_return do |request|
+      captured_bodies << JSON.parse(request.body)
+      { status: 200, body: openai_sse_body("reply"), headers: { "Content-Type" => "text/event-stream" } }
     end
+
+    ChatResponseJob.perform_now(chat.id, "hi")
+
+    assert_equal(
+      { "type" => "function", "function" => { "name" => "search_ansible_docs" } },
+      captured_bodies.first["tool_choice"]
+    )
+  end
+
+  test "every request includes the grounding system instructions, exactly once" do
+    chat = Chat.create!
+    captured_bodies = []
+
+    stub_request(:post, "https://api.openai.com/v1/chat/completions").to_return do |request|
+      captured_bodies << JSON.parse(request.body)
+      { status: 200, body: openai_sse_body("reply ##{captured_bodies.size}"),
+        headers: { "Content-Type" => "text/event-stream" } }
+    end
+
+    ChatResponseJob.perform_now(chat.id, "first question")
+    ChatResponseJob.perform_now(chat.id, "second question")
+
+    # gpt-5-mini goes through RubyLLM's OpenAI provider with the default
+    # `openai_use_system_role: false`, which sends role "developer" instead
+    # of "system" on the wire (see providers/openai/chat.rb#format_role) --
+    # the persisted Message row is still role: :system either way.
+    first_system_messages, second_system_messages = captured_bodies.map do |body|
+      body["messages"].select { |m| m["role"] == "developer" }
+    end
+
+    assert_equal 1, first_system_messages.size
+    assert_equal 1, second_system_messages.size
+    assert_equal ChatResponseJob::SYSTEM_INSTRUCTIONS, second_system_messages.first["content"]
+  end
+
+  test "a reply where the search tool finds nothing relevant still gets a RetrievalLog row" do
+    query = "hi there"
+    stub_search_ansible_docs_tool_call(query: query)
+
+    # No chunks exist in the test DB for this test (no create_chunk calls), so
+    # HybridSearch returns no candidates and SearchAnsibleDocs never reaches
+    # RerankerClient -- only /embed (for the query vector) needs stubbing.
+    stub_request(:post, "http://embedder:8000/embed")
+      .with(body: { texts: [ query ] }.to_json)
+      .to_return(status: 200, body: { embeddings: [ Array.new(384, 0.0) ] }.to_json,
+                 headers: { "Content-Type" => "application/json" })
+
+    chat = Chat.create!
+    assert_difference("RetrievalLog.count", 1) do
+      ChatResponseJob.perform_now(chat.id, query)
+    end
+
+    log = RetrievalLog.last
+    assert_equal [], log.retrieved_chunks
+    assert_nil log.top_module
+    assert_nil log.ansible_core_version
+    assert_not_nil log.response_time
   end
 end

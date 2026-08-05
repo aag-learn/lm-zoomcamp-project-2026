@@ -67,7 +67,8 @@ module Eval
     end
 
     def ask_with_tools(question)
-      RubyLLM.chat.with_tools(SearchAnsibleDocs.new, GetModuleDetails).ask(question).content
+      RubyLLM.chat.with_tools(SearchAnsibleDocs.new, GetModuleDetails, choice: :search_ansible_docs)
+             .ask(question).content
     end
 
     def ask_without_tools(question)

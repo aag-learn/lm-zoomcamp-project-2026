@@ -16,3 +16,13 @@
 - [ ] 3.1 Run the full test suite, rubocop, and brakeman
 - [ ] 3.2 Rebuild the `web`/`worker` images, bring up the stack, and replay this session's exact repro (asking a question that triggers `SearchAnsibleDocs`, e.g. "how can I install a brew package using ansible") through the real running app; confirm the transcript shows only the user's message and the final assistant reply (with citation) — no raw tool-call or tool-result bubble at any point during streaming, and the same after a page reload
 - [ ] 3.3 Confirm a plain question that doesn't trigger any tool still streams and renders exactly as before (no regression for the non-tool path)
+
+## 4. Retrieval-details popup
+
+- [ ] 4.1 Write a test asserting an assistant message with a `RetrievalLog` renders a retrieval-details affordance (not an inline "Sources:" line), and an assistant message with no `RetrievalLog` renders neither
+- [ ] 4.2 Write a test/system-test that activating the affordance shows the log's retrieved chunks (stable_id + rerank_score), top_module, ansible_core_version, cost, and response_time — including for a log whose scores are all low/negative (no suppression)
+- [ ] 4.3 Confirm both fail against the current `_citations.html.erb` (which auto-renders instead)
+- [ ] 4.4 Replace `_citations.html.erb`'s auto-rendered line with the popup trigger; add the `<dialog>` markup and its Stimulus controller
+- [ ] 4.5 Update `_assistant.html.erb` if its rendering condition needs to change
+- [ ] 4.6 Run the tests from 4.1/4.2, confirm they pass
+- [ ] 4.7 Live-check: a tool-triggered reply shows the details popup with real data; a reply with no `RetrievalLog` shows no affordance at all
