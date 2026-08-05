@@ -1,0 +1,12 @@
+#!/bin/sh
+set -e
+
+# Both the web and worker images run this before their real CMD. worker is
+# always the first mover in a fresh stack (web depends_on worker: service_healthy,
+# and worker can't report healthy until it has already prepared the schema), so
+# these two db:prepare calls never race — see design.md under
+# openspec/changes/rework-startup-dependencies/ for why that ordering matters:
+# db:prepare's fresh-database path takes no advisory lock, unlike db:migrate.
+bin/rails db:prepare
+
+exec "$@"
