@@ -1,0 +1,18 @@
+apiVersion: 1
+
+datasources:
+  - name: Postgres
+    uid: postgres_grafana_reader
+    type: postgres
+    access: proxy
+    url: postgres:5432
+    database: rails_app_production
+    user: grafana_reader
+    isDefault: true
+    editable: false
+    secureJsonData:
+      password: $GRAFANA_DB_PASSWORD
+    jsonData:
+      database: rails_app_production
+      sslmode: disable
+      postgresVersion: 1800

@@ -1,0 +1,107 @@
+{
+  "title": "Chat Monitoring",
+  "uid": "chat-monitoring",
+  "schemaVersion": 39,
+  "version": 1,
+  "editable": false,
+  "timezone": "browser",
+  "time": { "from": "now-7d", "to": "now" },
+  "refresh": "30s",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Query volume/day",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "postgres_grafana_reader" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT\n  $__timeGroup(created_at, $__interval) AS time,\n  COUNT(*) AS queries\nFROM retrieval_logs\nWHERE $__timeFilter(created_at)\nGROUP BY 1\nORDER BY 1",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Latency p50/p95/day",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "datasource": { "type": "postgres", "uid": "postgres_grafana_reader" },
+      "fieldConfig": { "defaults": { "unit": "s" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT\n  $__timeGroup(created_at, $__interval) AS time,\n  percentile_cont(0.5) WITHIN GROUP (ORDER BY response_time) AS p50,\n  percentile_cont(0.95) WITHIN GROUP (ORDER BY response_time) AS p95\nFROM retrieval_logs\nWHERE $__timeFilter(created_at)\nGROUP BY 1\nORDER BY 1",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Cost/day + running total",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "datasource": { "type": "postgres", "uid": "postgres_grafana_reader" },
+      "fieldConfig": { "defaults": { "unit": "currencyUSD" }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "WITH daily AS (\n  SELECT\n    $__timeGroup(created_at, $__interval) AS time,\n    SUM(cost) AS daily_cost\n  FROM retrieval_logs\n  WHERE $__timeFilter(created_at)\n  GROUP BY 1\n)\nSELECT\n  time,\n  daily_cost,\n  SUM(daily_cost) OVER (ORDER BY time) AS running_total\nFROM daily\nORDER BY time",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "Feedback ratio/day",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "datasource": { "type": "postgres", "uid": "postgres_grafana_reader" },
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT\n  $__timeGroup(created_at, $__interval) AS time,\n  SUM(CASE WHEN rating = 1 THEN 1 ELSE 0 END)::float / NULLIF(COUNT(*), 0) AS positive_ratio\nFROM feedbacks\nWHERE $__timeFilter(created_at)\nGROUP BY 1\nORDER BY 1",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Top modules queried",
+      "type": "barchart",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 16 },
+      "datasource": { "type": "postgres", "uid": "postgres_grafana_reader" },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "table",
+          "rawSql": "SELECT\n  top_module,\n  COUNT(*) AS queries\nFROM retrieval_logs\nWHERE $__timeFilter(created_at) AND top_module IS NOT NULL\nGROUP BY top_module\nORDER BY queries DESC\nLIMIT 10",
+          "rawQuery": true
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Low-confidence-retrieval rate/day",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 16 },
+      "datasource": { "type": "postgres", "uid": "postgres_grafana_reader" },
+      "description": "Share of queries whose top-ranked chunk had a reranker score below 0.3 — threshold is a starting point, tune against this project's own eval score distribution (see docs/evaluation-results.md).",
+      "fieldConfig": { "defaults": { "unit": "percentunit", "min": 0, "max": 1 }, "overrides": [] },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT\n  $__timeGroup(created_at, $__interval) AS time,\n  SUM(CASE WHEN (retrieved_chunks->0->>'rerank_score')::float < 0.3 THEN 1 ELSE 0 END)::float / NULLIF(COUNT(*), 0) AS low_confidence_rate\nFROM retrieval_logs\nWHERE $__timeFilter(created_at) AND jsonb_array_length(retrieved_chunks) > 0\nGROUP BY 1\nORDER BY 1",
+          "rawQuery": true
+        }
+      ]
+    }
+  ]
+}

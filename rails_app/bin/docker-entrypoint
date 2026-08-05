@@ -8,5 +8,6 @@ set -e
 # openspec/changes/rework-startup-dependencies/ for why that ordering matters:
 # db:prepare's fresh-database path takes no advisory lock, unlike db:migrate.
 bin/rails db:prepare
+bin/rails db:grafana_reader:ensure
 
 exec "$@"

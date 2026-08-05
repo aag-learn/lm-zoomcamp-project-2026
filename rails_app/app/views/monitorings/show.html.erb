@@ -1,0 +1,34 @@
+<% content_for :title, "Monitoring" %>
+
+<h1 class="text-2xl font-semibold text-gray-900">Monitoring</h1>
+
+<p class="mt-2 text-sm text-gray-600">
+  A quick summary of live chat usage. For the full dashboard (latency, cost trends,
+  top modules, retrieval confidence), see
+  <a href="http://localhost:<%= @grafana_port %>" class="text-blue-600 hover:underline" target="_blank" rel="noopener">Grafana</a>.
+</p>
+
+<dl class="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4">
+  <div class="rounded-lg border border-gray-200 p-4">
+    <dt class="text-sm text-gray-500">Total queries</dt>
+    <dd class="mt-1 text-2xl font-semibold text-gray-900"><%= number_with_delimiter(@total_queries) %></dd>
+  </div>
+  <div class="rounded-lg border border-gray-200 p-4">
+    <dt class="text-sm text-gray-500">Avg response time</dt>
+    <dd class="mt-1 text-2xl font-semibold text-gray-900">
+      <%= @avg_response_time ? "#{@avg_response_time.round(2)}s" : "—" %>
+    </dd>
+  </div>
+  <div class="rounded-lg border border-gray-200 p-4">
+    <dt class="text-sm text-gray-500">Total cost</dt>
+    <dd class="mt-1 text-2xl font-semibold text-gray-900">
+      <%= number_to_currency(@total_cost || 0, precision: 4) %>
+    </dd>
+  </div>
+  <div class="rounded-lg border border-gray-200 p-4">
+    <dt class="text-sm text-gray-500">Feedback ratio</dt>
+    <dd class="mt-1 text-2xl font-semibold text-gray-900">
+      <%= @feedback_ratio ? number_to_percentage(@feedback_ratio * 100, precision: 0) : "—" %>
+    </dd>
+  </div>
+</dl>
