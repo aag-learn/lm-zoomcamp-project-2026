@@ -1,0 +1,525 @@
+{
+  "ansible.builtin.iptables": {
+    "doc": {
+      "attributes": {
+        "check_mode": {
+          "description": "Can run in check_mode and return changed status prediction without modifying target, if not supported the action will be skipped.",
+          "support": "full"
+        },
+        "diff_mode": {
+          "description": "Will return details on what has changed (or possibly needs changing in check_mode), when in diff mode",
+          "support": "none"
+        },
+        "platform": {
+          "description": "Target OS/families that can be operated against",
+          "platforms": "linux",
+          "support": "N/A"
+        }
+      },
+      "author": [
+        "Linus Unneb\u00e4ck (@LinusU) <linus@folkdatorn.se>",
+        "S\u00e9bastien DA ROCHA (@sebastiendarocha)"
+      ],
+      "collection": "ansible.builtin",
+      "description": [
+        "M(ansible.builtin.iptables) is used to set up, maintain, and inspect the tables of IP packet filter rules in the Linux kernel.",
+        "This module does not handle the saving and/or loading of rules, but rather only manipulates the current rules that are present in memory. This is the same as the behaviour of the C(iptables) and C(ip6tables) command which this module uses internally."
+      ],
+      "filename": "/home/aalba/.local/share/mise/installs/ansible/14.2.0/venvs/ansible/lib/python3.14/site-packages/ansible/modules/iptables.py",
+      "has_action": false,
+      "module": "iptables",
+      "notes": [
+        "This module just deals with individual rules. If you need advanced chaining of rules the recommended way is to template the iptables restore file."
+      ],
+      "options": {
+        "action": {
+          "choices": [
+            "append",
+            "insert"
+          ],
+          "default": "append",
+          "description": [
+            "Whether the rule should be appended at the bottom or inserted at the top.",
+            "If the rule already exists the chain will not be modified."
+          ],
+          "type": "str",
+          "version_added": "2.2",
+          "version_added_collection": "ansible.builtin"
+        },
+        "chain": {
+          "description": [
+            "Specify the iptables chain to modify.",
+            "This could be a user-defined chain or one of the standard iptables chains, like V(INPUT), V(FORWARD), V(OUTPUT), V(PREROUTING), V(POSTROUTING), V(SECMARK) or V(CONNSECMARK)."
+          ],
+          "type": "str"
+        },
+        "chain_management": {
+          "default": false,
+          "description": [
+            "If V(true) and O(state) is V(present), the chain will be created if needed.",
+            "If V(true) and O(state) is V(absent), the chain will be deleted if the only other parameter passed are O(chain) and optionally O(table)."
+          ],
+          "type": "bool",
+          "version_added": "2.13",
+          "version_added_collection": "ansible.builtin"
+        },
+        "comment": {
+          "description": [
+            "This specifies a comment that will be added to the rule."
+          ],
+          "type": "str"
+        },
+        "ctstate": {
+          "default": [],
+          "description": [
+            "A list of the connection states to match in the conntrack module.",
+            "Possible values are V(INVALID), V(NEW), V(ESTABLISHED), V(RELATED), V(UNTRACKED), V(SNAT), V(DNAT)."
+          ],
+          "elements": "str",
+          "type": "list"
+        },
+        "destination": {
+          "description": [
+            "Destination specification.",
+            "Address can be either a network name, a hostname, a network IP address (with /mask), or a plain IP address.",
+            "Hostnames will be resolved once only, before the rule is submitted to the kernel. Please note that specifying any name to be resolved with a remote query such as DNS is a really bad idea.",
+            "The mask can be either a network mask or a plain number, specifying the number of 1's at the left side of the network mask. Thus, a mask of 24 is equivalent to 255.255.255.0. A V(!) argument before the address specification inverts the sense of the address."
+          ],
+          "type": "str"
+        },
+        "destination_port": {
+          "description": [
+            "Destination port or port range specification. This can either be a service name or a port number. An inclusive range can also be specified, using the format first:last. If the first port is omitted, '0' is assumed; if the last is omitted, '65535' is assumed. If the first port is greater than the second one they will be swapped. This is only valid if the rule also specifies one of the following protocols: tcp, udp, dccp or sctp."
+          ],
+          "type": "str"
+        },
+        "destination_ports": {
+          "default": [],
+          "description": [
+            "This specifies multiple destination port numbers or port ranges to match in the multiport module.",
+            "It can only be used in conjunction with the protocols tcp, udp, udplite, dccp and sctp."
+          ],
+          "elements": "str",
+          "type": "list",
+          "version_added": "2.11",
+          "version_added_collection": "ansible.builtin"
+        },
+        "dst_range": {
+          "description": [
+            "Specifies the destination IP range to match in the iprange module."
+          ],
+          "type": "str",
+          "version_added": "2.8",
+          "version_added_collection": "ansible.builtin"
+        },
+        "flush": {
+          "default": false,
+          "description": [
+            "Flushes the specified table and chain of all rules.",
+            "If no chain is specified then the entire table is purged.",
+            "Ignores all other parameters."
+          ],
+          "type": "bool",
+          "version_added": "2.2",
+          "version_added_collection": "ansible.builtin"
+        },
+        "fragment": {
+          "description": [
+            "This means that the rule only refers to second and further fragments of fragmented packets.",
+            "Since there is no way to tell the source or destination ports of such a packet (or ICMP type), such a packet will not match any rules which specify them.",
+            "When the \"!\" argument precedes the fragment argument, the rule will only match head fragments, or unfragmented packets."
+          ],
+          "type": "str"
+        },
+        "gateway": {
+          "description": [
+            "This specifies the IP address of the host to send the cloned packets.",
+            "This option is only valid when O(jump=TEE)."
+          ],
+          "type": "str",
+          "version_added": "2.8",
+          "version_added_collection": "ansible.builtin"
+        },
+        "gid_owner": {
+          "description": [
+            "Specifies the GID or group to use in the match by owner rule."
+          ],
+          "type": "str",
+          "version_added": "2.9",
+          "version_added_collection": "ansible.builtin"
+        },
+        "goto": {
+          "description": [
+            "This specifies that the processing should continue in a user-specified chain.",
+            "Unlike the jump argument return will not continue processing in this chain but instead in the chain that called us via jump."
+          ],
+          "type": "str"
+        },
+        "icmp_type": {
+          "description": [
+            "This allows specification of the ICMP type, which can be a numeric ICMP type, type/code pair, or one of the ICMP type names shown by the command C(iptables -p icmp -h)."
+          ],
+          "type": "str",
+          "version_added": "2.2",
+          "version_added_collection": "ansible.builtin"
+        },
+        "in_interface": {
+          "description": [
+            "Name of an interface via which a packet was received (only for packets entering the V(INPUT), V(FORWARD) and V(PREROUTING) chains).",
+            "When the V(!) argument is used before the interface name, the sense is inverted.",
+            "If the interface name ends in a V(+), then any interface which begins with this name will match.",
+            "If this option is omitted, any interface name will match."
+          ],
+          "type": "str"
+        },
+        "ip_version": {
+          "choices": [
+            "ipv4",
+            "ipv6",
+            "both"
+          ],
+          "default": "ipv4",
+          "description": [
+            "Which version of the IP protocol this rule should apply to."
+          ],
+          "type": "str"
+        },
+        "jump": {
+          "description": [
+            "This specifies the target of the rule; i.e., what to do if the packet matches it.",
+            "The target can be a user-defined chain (other than the one this rule is in), one of the special builtin targets that decide the fate of the packet immediately, or an extension (see EXTENSIONS below).",
+            "If this option is omitted in a rule (and the goto parameter is not used), then matching the rule will have no effect on the packet's fate, but the counters on the rule will be incremented."
+          ],
+          "type": "str"
+        },
+        "limit": {
+          "description": [
+            "Specifies the maximum average number of matches to allow per second.",
+            "The number can specify units explicitly, using C(/second), C(/minute), C(/hour) or C(/day), or parts of them (so V(5/second) is the same as V(5/s))."
+          ],
+          "type": "str"
+        },
+        "limit_burst": {
+          "description": [
+            "Specifies the maximum burst before the above limit kicks in."
+          ],
+          "type": "str",
+          "version_added": "2.1",
+          "version_added_collection": "ansible.builtin"
+        },
+        "log_level": {
+          "choices": [
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "emerg",
+            "alert",
+            "crit",
+            "error",
+            "warning",
+            "notice",
+            "info",
+            "debug"
+          ],
+          "description": [
+            "Logging level according to the syslogd-defined priorities.",
+            "The value can be strings or numbers from 1-8.",
+            "This parameter is only applicable if O(jump=LOG)."
+          ],
+          "type": "str",
+          "version_added": "2.8",
+          "version_added_collection": "ansible.builtin"
+        },
+        "log_prefix": {
+          "description": [
+            "Specifies a log text for the rule. Only makes sense with a LOG jump."
+          ],
+          "type": "str",
+          "version_added": "2.5",
+          "version_added_collection": "ansible.builtin"
+        },
+        "match": {
+          "default": [],
+          "description": [
+            "Specifies a match to use, that is, an extension module that tests for a specific property.",
+            "The set of matches makes up the condition under which a target is invoked.",
+            "Matches are evaluated first to last if specified as an array and work in short-circuit fashion, in other words if one extension yields false, the evaluation will stop.",
+            "The module automatically adds necessary extensions (for example, O(uid_owner=1) corresponds to the command flags C(-m owner --uid-owner 1)), so it is often unnecessary to use the O(match) argument."
+          ],
+          "elements": "str",
+          "type": "list"
+        },
+        "match_set": {
+          "description": [
+            "Specifies a set name that can be defined by ipset.",
+            "Must be used together with the O(match_set_flags) parameter.",
+            "When the V(!) argument is prepended then it inverts the rule.",
+            "Uses the iptables set extension."
+          ],
+          "type": "str",
+          "version_added": "2.11",
+          "version_added_collection": "ansible.builtin"
+        },
+        "match_set_flags": {
+          "choices": [
+            "src",
+            "dst",
+            "src,dst",
+            "dst,src",
+            "dst,dst",
+            "src,src"
+          ],
+          "description": [
+            "Specifies the necessary flags for the match_set parameter.",
+            "Must be used together with the O(match_set) parameter.",
+            "Uses the iptables set extension.",
+            "Choices V(dst,dst) and V(src,src) added in version 2.17."
+          ],
+          "type": "str",
+          "version_added": "2.11",
+          "version_added_collection": "ansible.builtin"
+        },
+        "numeric": {
+          "default": false,
+          "description": [
+            "This parameter controls the running of the list -action of iptables, which is used internally by the module.",
+            "Does not affect the actual functionality. Use this if iptables hang when creating a chain or altering policy.",
+            "If V(true), then iptables skips the DNS-lookup of the IP addresses in a chain when it uses the list -action.",
+            "Listing is used internally for example when setting a policy or creating a chain."
+          ],
+          "type": "bool",
+          "version_added": "2.15",
+          "version_added_collection": "ansible.builtin"
+        },
+        "out_interface": {
+          "description": [
+            "Name of an interface via which a packet is going to be sent (for packets entering the V(FORWARD), V(OUTPUT) and V(POSTROUTING) chains).",
+            "When the V(!) argument is used before the interface name, the sense is inverted.",
+            "If the interface name ends in a V(+), then any interface which begins with this name will match.",
+            "If this option is omitted, any interface name will match."
+          ],
+          "type": "str"
+        },
+        "policy": {
+          "choices": [
+            "ACCEPT",
+            "DROP",
+            "QUEUE",
+            "RETURN"
+          ],
+          "description": [
+            "Set the policy for the chain to the given target.",
+            "Only built-in chains can have policies.",
+            "This parameter requires the O(chain) parameter.",
+            "If you specify this parameter, all other parameters will be ignored.",
+            "This parameter is used to set the default policy for the given O(chain). Do not confuse this with O(jump) parameter."
+          ],
+          "type": "str",
+          "version_added": "2.2",
+          "version_added_collection": "ansible.builtin"
+        },
+        "protocol": {
+          "description": [
+            "The protocol of the rule or of the packet to check.",
+            "The specified protocol can be one of V(tcp), V(udp), V(udplite), V(icmp), V(ipv6-icmp) or V(icmpv6), V(esp), V(ah), V(sctp) or the special keyword V(all), or it can be a numeric value, representing one of these protocols or a different one.",
+            "A protocol name from C(/etc/protocols) is also allowed.",
+            "A V(!) argument before the protocol inverts the test.",
+            "The number zero is equivalent to all.",
+            "V(all) will match with all protocols and is taken as default when this option is omitted."
+          ],
+          "type": "str"
+        },
+        "reject_with": {
+          "description": [
+            "Specifies the error packet type to return while rejecting. It implies C(jump=REJECT)."
+          ],
+          "type": "str",
+          "version_added": "2.1",
+          "version_added_collection": "ansible.builtin"
+        },
+        "rule_num": {
+          "description": [
+            "Insert the rule as the given rule number.",
+            "This works only with O(action=insert)."
+          ],
+          "type": "str",
+          "version_added": "2.5",
+          "version_added_collection": "ansible.builtin"
+        },
+        "set_counters": {
+          "description": [
+            "This enables the administrator to initialize the packet and byte counters of a rule (during V(INSERT), V(APPEND), V(REPLACE) operations)."
+          ],
+          "type": "str"
+        },
+        "set_dscp_mark": {
+          "description": [
+            "This allows specifying a DSCP mark to be added to packets. It takes either an integer or hex value.",
+            "If the parameter is set, O(jump) is set to V(DSCP).",
+            "Mutually exclusive with O(set_dscp_mark_class)."
+          ],
+          "type": "str",
+          "version_added": "2.1",
+          "version_added_collection": "ansible.builtin"
+        },
+        "set_dscp_mark_class": {
+          "description": [
+            "This allows specifying a predefined DiffServ class which will be translated to the corresponding DSCP mark.",
+            "If the parameter is set, O(jump) is set to V(DSCP).",
+            "Mutually exclusive with O(set_dscp_mark)."
+          ],
+          "type": "str",
+          "version_added": "2.1",
+          "version_added_collection": "ansible.builtin"
+        },
+        "source": {
+          "description": [
+            "Source specification.",
+            "Address can be either a network name, a hostname, a network IP address (with /mask), or a plain IP address.",
+            "Hostnames will be resolved once only, before the rule is submitted to the kernel. Please note that specifying any name to be resolved with a remote query such as DNS is a really bad idea.",
+            "The mask can be either a network mask or a plain number, specifying the number of 1's at the left side of the network mask. Thus, a mask of 24 is equivalent to 255.255.255.0. A V(!) argument before the address specification inverts the sense of the address."
+          ],
+          "type": "str"
+        },
+        "source_port": {
+          "description": [
+            "Source port or port range specification.",
+            "This can either be a service name or a port number.",
+            "An inclusive range can also be specified, using the format C(first:last).",
+            "If the first port is omitted, V(0) is assumed; if the last is omitted, V(65535) is assumed.",
+            "If the first port is greater than the second one they will be swapped."
+          ],
+          "type": "str"
+        },
+        "src_range": {
+          "description": [
+            "Specifies the source IP range to match the iprange module."
+          ],
+          "type": "str",
+          "version_added": "2.8",
+          "version_added_collection": "ansible.builtin"
+        },
+        "state": {
+          "choices": [
+            "absent",
+            "present"
+          ],
+          "default": "present",
+          "description": [
+            "Whether the rule should be absent or present."
+          ],
+          "type": "str"
+        },
+        "syn": {
+          "choices": [
+            "ignore",
+            "match",
+            "negate"
+          ],
+          "default": "ignore",
+          "description": [
+            "This allows matching packets that have the SYN bit set and the ACK and RST bits unset.",
+            "When negated, this matches all packets with the RST or the ACK bits set."
+          ],
+          "type": "str",
+          "version_added": "2.5",
+          "version_added_collection": "ansible.builtin"
+        },
+        "table": {
+          "choices": [
+            "filter",
+            "nat",
+            "mangle",
+            "raw",
+            "security"
+          ],
+          "default": "filter",
+          "description": [
+            "This option specifies the packet matching table on which the command should operate.",
+            "If the kernel is configured with automatic module loading, an attempt will be made to load the appropriate module for that table if it is not already there."
+          ],
+          "type": "str"
+        },
+        "tcp_flags": {
+          "description": [
+            "TCP flags specification.",
+            "O(tcp_flags) expects a dict with the two keys C(flags) and C(flags_set)."
+          ],
+          "suboptions": {
+            "flags": {
+              "description": [
+                "List of flags you want to examine."
+              ],
+              "elements": "str",
+              "type": "list"
+            },
+            "flags_set": {
+              "description": [
+                "Flags to be set."
+              ],
+              "elements": "str",
+              "type": "list"
+            }
+          },
+          "type": "dict",
+          "version_added": "2.4",
+          "version_added_collection": "ansible.builtin"
+        },
+        "to_destination": {
+          "description": [
+            "This specifies a destination address to use with O(ctstate=DNAT).",
+            "Without this, the destination address is never altered."
+          ],
+          "type": "str",
+          "version_added": "2.1",
+          "version_added_collection": "ansible.builtin"
+        },
+        "to_ports": {
+          "description": [
+            "This specifies a destination port or range of ports to use, without this, the destination port is never altered.",
+            "This is only valid if the rule also specifies one of the protocol V(tcp), V(udp), V(dccp) or V(sctp)."
+          ],
+          "type": "str"
+        },
+        "to_source": {
+          "description": [
+            "This specifies a source address to use with O(ctstate=SNAT).",
+            "Without this, the source address is never altered."
+          ],
+          "type": "str",
+          "version_added": "2.2",
+          "version_added_collection": "ansible.builtin"
+        },
+        "uid_owner": {
+          "description": [
+            "Specifies the UID or username to use in the match by owner rule.",
+            "From Ansible 2.6 when the C(!) argument is prepended then the it inverts the rule to apply instead to all users except that one specified."
+          ],
+          "type": "str",
+          "version_added": "2.1",
+          "version_added_collection": "ansible.builtin"
+        },
+        "wait": {
+          "description": [
+            "Wait N seconds for the xtables lock to prevent multiple instances of the program from running concurrently."
+          ],
+          "type": "str",
+          "version_added": "2.10",
+          "version_added_collection": "ansible.builtin"
+        }
+      },
+      "plugin_name": "ansible.builtin.iptables",
+      "short_description": "Modify iptables rules",
+      "version_added": "2.0",
+      "version_added_collection": "ansible.builtin"
+    },
+    "examples": "\n- name: Block specific IP\n  ansible.builtin.iptables:\n    chain: INPUT\n    source: 8.8.8.8\n    jump: DROP\n  become: yes\n\n- name: Forward port 80 to 8600\n  ansible.builtin.iptables:\n    table: nat\n    chain: PREROUTING\n    in_interface: eth0\n    protocol: tcp\n    match: tcp\n    destination_port: 80\n    jump: REDIRECT\n    to_ports: 8600\n    comment: Redirect web traffic to port 8600\n  become: yes\n\n- name: Allow related and established connections\n  ansible.builtin.iptables:\n    chain: INPUT\n    ctstate: ESTABLISHED,RELATED\n    jump: ACCEPT\n  become: yes\n\n- name: Allow new incoming SYN packets on TCP port 22 (SSH)\n  ansible.builtin.iptables:\n    chain: INPUT\n    protocol: tcp\n    destination_port: 22\n    ctstate: NEW\n    syn: match\n    jump: ACCEPT\n    comment: Accept new SSH connections.\n\n- name: Match on IP ranges\n  ansible.builtin.iptables:\n    chain: FORWARD\n    src_range: 192.168.1.100-192.168.1.199\n    dst_range: 10.0.0.1-10.0.0.50\n    jump: ACCEPT\n\n- name: Allow source IPs defined in ipset \"admin_hosts\" on port 22\n  ansible.builtin.iptables:\n    chain: INPUT\n    match_set: admin_hosts\n    match_set_flags: src\n    destination_port: 22\n    jump: ALLOW\n\n- name: Tag all outbound tcp packets with DSCP mark 8\n  ansible.builtin.iptables:\n    chain: OUTPUT\n    jump: DSCP\n    table: mangle\n    set_dscp_mark: 8\n    protocol: tcp\n\n- name: Tag all outbound tcp packets with DSCP DiffServ class CS1\n  ansible.builtin.iptables:\n    chain: OUTPUT\n    jump: DSCP\n    table: mangle\n    set_dscp_mark_class: CS1\n    protocol: tcp\n\n# Create the user-defined chain ALLOWLIST\n- iptables:\n    chain: ALLOWLIST\n    chain_management: true\n\n# Delete the user-defined chain ALLOWLIST\n- iptables:\n    chain: ALLOWLIST\n    chain_management: true\n    state: absent\n\n- name: Insert a rule on line 5\n  ansible.builtin.iptables:\n    chain: INPUT\n    protocol: tcp\n    destination_port: 8080\n    jump: ACCEPT\n    action: insert\n    rule_num: 5\n\n# Think twice before running following task as this may lock target system\n- name: Set the policy for the INPUT chain to DROP\n  ansible.builtin.iptables:\n    chain: INPUT\n    policy: DROP\n\n- name: Reject tcp with tcp-reset\n  ansible.builtin.iptables:\n    chain: INPUT\n    protocol: tcp\n    reject_with: tcp-reset\n    ip_version: ipv4\n\n- name: Set tcp flags\n  ansible.builtin.iptables:\n    chain: OUTPUT\n    jump: DROP\n    protocol: tcp\n    tcp_flags:\n      flags: ALL\n      flags_set:\n        - ACK\n        - RST\n        - SYN\n        - FIN\n\n- name: Iptables flush filter\n  ansible.builtin.iptables:\n    chain: \"{{ item }}\"\n    flush: yes\n  with_items:  [ 'INPUT', 'FORWARD', 'OUTPUT' ]\n\n- name: Iptables flush nat\n  ansible.builtin.iptables:\n    table: nat\n    chain: '{{ item }}'\n    flush: yes\n  with_items: [ 'INPUT', 'OUTPUT', 'PREROUTING', 'POSTROUTING' ]\n\n- name: Log packets arriving into an user-defined chain\n  ansible.builtin.iptables:\n    chain: LOGGING\n    action: append\n    state: present\n    limit: 2/second\n    limit_burst: 20\n    log_prefix: \"IPTABLES:INFO: \"\n    log_level: info\n\n- name: Allow connections on multiple ports\n  ansible.builtin.iptables:\n    chain: INPUT\n    protocol: tcp\n    destination_ports:\n      - \"80\"\n      - \"443\"\n      - \"8081:8083\"\n    jump: ACCEPT\n",
+    "metadata": null,
+    "return": null
+  }
+}

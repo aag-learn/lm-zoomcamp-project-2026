@@ -29,6 +29,13 @@ This project uses OpenSpec (`/opsx:*` commands) for every infra/feature change: 
 - `uv tool install <pkg>` for one-off CLI tools in a Dockerfile (e.g. `ansible-core` in `worker`) — sidesteps Debian's PEP 668 externally-managed-environment restriction that blocks plain `pip install`, and downloads its own Python if the base image has none.
 - CPU-only `torch`: plain `torch`/`sentence-transformers` pulls the full CUDA/`nvidia-*` wheel stack by default. Pin via `[[tool.uv.index]]` (`pytorch-cpu`, `explicit = true`) + `[tool.uv.sources]` — but `torch` must be listed as a **direct** dependency for the override to take effect; it's silently ignored if only pulled in transitively.
 
+## Testing
+
+- Default Rails Minitest scaffold (`rails_app/test/`) — no RSpec, keep it that way.
+- **Test-first for code with real failure modes or non-trivial logic**: parsers, chunkers, subprocess/HTTP error handling — anywhere a regression could silently reintroduce a bug rather than loudly break something. Write the test before (or alongside, written first) the implementation, not after as a smoke-test afterthought. This was decided explicitly during the `ansible-ingestion-pipeline` change, prompted by a real bug that testing after the fact would likely have shipped (the `all-MiniLM-L6-v2` 256-token truncation on long `examples` blocks — see that change's `design.md`).
+- Mechanical scaffolding (models, migrations, job/service wiring with no branching logic) doesn't need the same rigor — a test written after confirming it works is fine.
+- Stub external calls in tests rather than hitting real services/processes: `webmock` for HTTP (e.g. Faraday calls to `embedder`), recorded fixture files for anything shelling out to `ansible-doc` — tests shouldn't require `ansible-doc` installed or `embedder` running wherever they run.
+
 ## This sandbox's podman quirks (not real bugs in the project)
 
 This environment uses `podman`/`podman-compose`, not real Docker. Known gaps, confirmed by direct testing — don't assume they indicate a problem with the actual `docker-compose.yml`:
