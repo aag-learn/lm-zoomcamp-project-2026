@@ -1,7 +1,7 @@
 <% feedback = message.feedback %>
 <%= button_to "👍", message_feedback_path(message), params: { feedback: { rating: 1 } }, method: :post,
-    form: { style: "display: inline;" },
-    style: feedback&.rating == 1 ? "font-weight: bold;" : "" %>
+    form: { class: "inline" },
+    class: class_names("rounded px-2 py-1 hover:bg-gray-100", "bg-green-100 font-bold" => feedback&.rating == 1) %>
 <%= button_to "👎", message_feedback_path(message), params: { feedback: { rating: -1 } }, method: :post,
-    form: { style: "display: inline;" },
-    style: feedback&.rating == -1 ? "font-weight: bold;" : "" %>
+    form: { class: "inline" },
+    class: class_names("rounded px-2 py-1 hover:bg-gray-100", "bg-red-100 font-bold" => feedback&.rating == -1) %>

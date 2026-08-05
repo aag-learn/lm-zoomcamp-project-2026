@@ -24,6 +24,21 @@
   </head>
 
   <body>
-    <%= yield %>
+    <nav class="fixed inset-x-0 top-0 z-10 border-b border-gray-200 bg-white">
+      <div class="container mx-auto flex items-center gap-6 px-5 py-4">
+        <%= link_to "Chats", chats_path, class: class_names("font-semibold", "text-blue-600" => nav_link_active?(chats_path), "text-gray-700 hover:text-blue-600" => !nav_link_active?(chats_path)) %>
+        <%= link_to "Models", models_path, class: class_names("font-semibold", "text-blue-600" => nav_link_active?(models_path), "text-gray-700 hover:text-blue-600" => !nav_link_active?(models_path)) %>
+        <%= link_to "New chat", new_chat_path, class: "ml-auto rounded-md bg-blue-600 px-3 py-1.5 text-sm text-white hover:bg-blue-700" %>
+      </div>
+    </nav>
+    <main class="container mx-auto mt-28 flex flex-col px-5">
+      <% if notice.present? %>
+        <p class="mb-4 rounded-md bg-green-50 px-4 py-2 text-green-700"><%= notice %></p>
+      <% end %>
+      <% if alert.present? %>
+        <p class="mb-4 rounded-md bg-red-50 px-4 py-2 text-red-700"><%= alert %></p>
+      <% end %>
+      <%= yield %>
+    </main>
   </body>
 </html>

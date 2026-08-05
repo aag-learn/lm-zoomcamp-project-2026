@@ -1,12 +1,11 @@
 <% assistant ||= local_assigns[:message] %>
-<div id="message_<%= assistant.id %>" class="message"
-     style="margin-bottom: 20px; padding: 10px; border-left: 3px solid #28a745;">
-  <div style="font-weight: bold; margin-bottom: 5px;">Assistant</div>
-  <div id="message_<%= assistant.id %>_content" style="white-space: pre-wrap;"><%= assistant.content %></div>
-  <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+<div id="message_<%= assistant.id %>" class="message mb-5 rounded-r-md border-l-4 border-green-500 bg-green-50 p-3">
+  <div class="mb-1 font-semibold">Assistant</div>
+  <div id="message_<%= assistant.id %>_content" class="whitespace-pre-wrap"><%= assistant.content %></div>
+  <div class="mt-1 text-sm text-gray-500">
     <%= assistant.created_at&.strftime("%I:%M %p") %>
   </div>
-  <div id="message_<%= assistant.id %>_feedback">
+  <div id="message_<%= assistant.id %>_feedback" class="mt-2">
     <%= render "messages/feedback", message: assistant %>
   </div>
 </div>

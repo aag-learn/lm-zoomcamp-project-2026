@@ -1,25 +1,23 @@
-<% if notice.present? %>
-  <p style="color: green"><%= notice %></p>
-<% end %>
-
 <%= turbo_stream_from "chat_#{@chat.id}" %>
 
 <% content_for :title, "Chat" %>
 
-<h1>Chat <%= @chat.id %></h1>
+<div class="mx-auto w-full max-w-2xl">
+  <h1 class="mb-2 text-2xl font-bold">Chat <%= @chat.id %></h1>
 
-<p>Using <strong><%= @chat.model&.label || default_model_display_name %></strong></p>
+  <p class="mb-4 text-gray-600">Using <strong><%= @chat.model&.label || default_model_display_name %></strong></p>
 
-<div id="messages">
-  <% @chat.messages.where.not(id: nil).each do |message| %>
-    <%= render message %>
-  <% end %>
-</div>
+  <div id="messages">
+    <% @chat.messages.where.not(id: nil).each do |message| %>
+      <%= render message %>
+    <% end %>
+  </div>
 
-<div style="margin-top: 30px;">
-  <%= render "messages/form", chat: @chat, message: @message %>
-</div>
+  <div class="mt-8">
+    <%= render "messages/form", chat: @chat, message: @message %>
+  </div>
 
-<div style="margin-top: 20px;">
-  <%= link_to "Back to chats", chats_path %>
+  <div class="mt-5">
+    <%= link_to "Back to chats", chats_path, class: "text-blue-600 hover:underline" %>
+  </div>
 </div>

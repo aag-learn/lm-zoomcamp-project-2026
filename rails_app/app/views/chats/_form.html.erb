@@ -1,9 +1,9 @@
 <%= form_with(model: chat, url: chats_path) do |form| %>
   <% if chat.errors.any? %>
-    <div style="color: red">
-      <h2><%= pluralize(chat.errors.count, "error") %> prohibited this chat from being saved:</h2>
+    <div class="mb-4 rounded-md bg-red-50 p-3 text-red-700">
+      <h2 class="font-semibold"><%= pluralize(chat.errors.count, "error") %> prohibited this chat from being saved:</h2>
 
-      <ul>
+      <ul class="list-inside list-disc">
         <% chat.errors.each do |error| %>
           <li><%= error.full_message %></li>
         <% end %>
@@ -11,19 +11,19 @@
     </div>
   <% end %>
 
-  <div>
-    <%= form.label :model, "Select AI model:", style: "display: block" %>
+  <div class="mb-3">
+    <%= form.label :model, "Select AI model:", class: "mb-1 block font-medium" %>
     <%= form.select :model,
         options_for_select(@chat_models.map { |model| [model.label, model.id] }.unshift([default_model_display_name, nil]), @selected_model),
         {},
-        style: "width: 100%; max-width: 600px; padding: 5px;" %>
+        class: "w-full rounded-md border border-gray-300 px-3 py-2" %>
   </div>
 
-  <div style="margin-top: 15px;">
-    <%= form.text_field :prompt, style: "width: 100%; max-width: 600px;", placeholder: "What would you like to discuss?", autofocus: true %>
+  <div class="mb-3">
+    <%= form.text_field :prompt, class: "w-full rounded-md border border-gray-300 px-3 py-2", placeholder: "What would you like to discuss?", autofocus: true %>
   </div>
 
   <div>
-    <%= form.submit "Start new chat" %>
+    <%= form.submit "Start new chat", class: "cursor-pointer rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700" %>
   </div>
 <% end %>

@@ -1,9 +1,8 @@
 <% user ||= local_assigns[:message] %>
-<div id="message_<%= user.id %>" class="message"
-     style="margin-bottom: 20px; padding: 10px; border-left: 3px solid #007bff;">
-  <div style="font-weight: bold; margin-bottom: 5px;">User</div>
-  <div id="message_<%= user.id %>_content" style="white-space: pre-wrap;"><%= user.content %></div>
-  <div style="font-size: 0.85em; color: #666; margin-top: 5px;">
+<div id="message_<%= user.id %>" class="message mb-5 rounded-r-md border-l-4 border-blue-500 bg-blue-50 p-3">
+  <div class="mb-1 font-semibold">User</div>
+  <div id="message_<%= user.id %>_content" class="whitespace-pre-wrap"><%= user.content %></div>
+  <div class="mt-1 text-sm text-gray-500">
     <%= user.created_at&.strftime("%I:%M %p") %>
   </div>
 </div>

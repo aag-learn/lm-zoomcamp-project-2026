@@ -4,7 +4,11 @@ RubyLLM.configure do |config|
   # non-developer reviewers to configure via .env. No default: a missing key
   # should fail loudly (ENV.fetch raises KeyError), not silently proceed.
   config.openai_api_key = ENV.fetch("OPENAI_API_KEY")
-  # config.default_model = "gpt-5-nano"
+
+  # The direct OpenAI-provider "gpt-5-mini" — the registry also has an
+  # OpenRouter-routed "openai/gpt-5-mini" (different id, provider: "openrouter")
+  # which would silently misroute since only openai_api_key is configured here.
+  config.default_model = "gpt-5-mini"
 
   # Use the association-based acts_as API (recommended)
   config.use_new_acts_as = true
