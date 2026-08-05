@@ -1,0 +1,4 @@
+[tools]
+
+"claude" = "latest"
+"npm:@fission-ai/openspec" = "latest" 
